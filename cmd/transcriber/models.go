@@ -1,0 +1,49 @@
+package main
+
+import (
+	"os"
+
+	"github.com/bcc-code/transcriber/internal/transcriber"
+	"github.com/bcc-code/transcriber/internal/transcriber/fasterwhisper"
+	"github.com/bcc-code/transcriber/internal/transcriber/stub"
+	"github.com/bcc-code/transcriber/internal/transcriber/whispercpp"
+)
+
+// buildRegistry declares every Transcriber the server can use.
+//
+// To add a new model: import its adapter package and append another
+// Register call. Multiple variants of the same backend (e.g. medium vs
+// large) live as separate entries with distinct IDs so callers can pick
+// per request via the `model` field.
+//
+// Per-machine paths (binaries, model files) are read from env vars so the
+// same binary works in dev and prod without a recompile.
+func buildRegistry(defaultID string) *transcriber.Registry {
+	r := transcriber.NewRegistry(defaultID)
+
+	r.Register(stub.New("stub", "Stub Adapter"))
+
+	r.Register(whispercpp.New(whispercpp.Config{
+		ID:        "whisper-cpp-large-v3",
+		Binary:    envOr("WHISPER_CPP_BIN", "/opt/homebrew/bin/whisper-cli"),
+		ModelFile: envOr("WHISPER_CPP_MODEL", "/models/ggml-large-v3.bin"),
+		Threads:   8,
+	}))
+
+	r.Register(fasterwhisper.New(fasterwhisper.Config{
+		ID:          "faster-whisper-large-v3",
+		Binary:      envOr("FASTER_WHISPER_BIN", "/usr/local/bin/whisper-ctranslate2"),
+		Model:       "large-v3",
+		ComputeType: envOr("FASTER_WHISPER_COMPUTE_TYPE", "float16"),
+		Device:      envOr("FASTER_WHISPER_DEVICE", "cuda"),
+	}))
+
+	return r
+}
+
+func envOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
+}

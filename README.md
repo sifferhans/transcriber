@@ -19,18 +19,36 @@ internal/transcriber/   adapter interface
   └─ fasterwhisper/     shells out to whisper-ctranslate2
 internal/formats/       json / srt / vtt / txt writers
 internal/callback/      goroutine pool that POSTs webhooks
-internal/config/        JSON config loader
 ```
 
 ## Run
 
 ```sh
-cp config.example.json config.json
-go run ./cmd/transcriber -config config.json
+go run ./cmd/transcriber
 ```
 
-The example config defaults to the `stub` adapter so the server works without
-any backend installed.
+That's it — defaults to the `stub` adapter on `:8888` with 2 workers, no
+external backend required.
+
+## Configuration
+
+The set of registered models lives in `cmd/transcriber/models.go` as typed
+Go code. Server settings come from flags; per-machine paths from env vars.
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `-port` | `8888` | HTTP listen port |
+| `-workers` | `2` | concurrent transcription jobs |
+| `-callback-workers` | `2` | webhook delivery goroutines |
+| `-default-model` | `stub` | adapter ID used when the request omits `model` |
+
+| Env var | Default | Meaning |
+| --- | --- | --- |
+| `WHISPER_CPP_BIN` | `/opt/homebrew/bin/whisper-cli` | whisper.cpp binary |
+| `WHISPER_CPP_MODEL` | `/models/ggml-large-v3.bin` | whisper.cpp model file |
+| `FASTER_WHISPER_BIN` | `/usr/local/bin/whisper-ctranslate2` | faster-whisper CLI |
+| `FASTER_WHISPER_COMPUTE_TYPE` | `float16` | float16 / int8_float16 / int8 / ... |
+| `FASTER_WHISPER_DEVICE` | `cuda` | cuda / cpu / auto |
 
 ## API
 
@@ -38,13 +56,13 @@ any backend installed.
 
 ```json
 {
-  "path":        "/mnt/storage/audio/foo.wav",
-  "language":    "no",
-  "format":      "all",
+  "path": "/mnt/storage/audio/foo.wav",
+  "language": "no",
+  "format": "all",
   "output_path": "/mnt/storage/out/foo/",
-  "priority":    5,
-  "callback":    "https://example.com/hook",
-  "model":       "whisper-cpp-large-v3"
+  "priority": 5,
+  "callback": "https://example.com/hook",
+  "model": "whisper-cpp-large-v3"
 }
 ```
 
@@ -67,5 +85,7 @@ path to `transcript.json` once `COMPLETED`.
 ## Adding a new backend
 
 1. Implement `transcriber.Transcriber` in `internal/transcriber/<name>/`.
-2. Add a `case "<adapter-id>":` to `buildAdapter` in `cmd/transcriber/main.go`.
-3. Add an entry to `config.json`.
+2. Add another `r.Register(...)` call in `cmd/transcriber/models.go` with
+   the adapter's typed `Config`. Use a distinct ID per variant
+   (e.g. `whisper-cpp-large-v3`, `whisper-cpp-medium`) so callers can A/B
+   test by passing `"model": "..."` in the request body.
