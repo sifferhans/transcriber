@@ -1,10 +1,10 @@
 # transcriber
 
 Go-based transcription API. Drop-in compatible with the existing Python
-service consumed by `example.md` (`POST /transcription/job`, `GET
-/transcription/job/{id}`), with an adapter system that lets you swap the
-underlying ASR backend (whisper.cpp, faster-whisper, stub, ...) per request
-via an additive `model` field.
+service (`POST /transcription/job`, `GET /transcription/job/{id}`), with
+an adapter system that lets you swap the underlying ASR backend
+(whisper.cpp, faster-whisper, stub, ...) per request via an additive
+`model` field.
 
 ## Layout
 
@@ -45,9 +45,10 @@ make build          # pnpm generate → internal/web/dist → go build
 ```
 
 Both default to the `stub` adapter so they work without any ASR backend
-installed. To run the API alone without the SPA build step:
-`go run ./cmd/transcriber` (the binary ships with a placeholder
-`index.html`).
+installed. `internal/web/dist/` must be populated before the Go side will
+compile (the `//go:embed` directive needs at least one file) — run
+`make frontend` once after cloning, then `go run ./cmd/transcriber` works
+on its own for API-only iteration.
 
 ## Configuration
 

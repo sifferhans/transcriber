@@ -19,8 +19,9 @@ type TranscribeInput struct {
 	Model      string `json:"model,omitempty"`
 }
 
-// TranscribeJob mirrors the response shape of the existing Python API so the
-// Temporal activity in example.md can talk to this server unchanged.
+// TranscribeJob mirrors the response shape of the existing Python API so
+// existing callers (e.g. the Temporal activity that drives transcription)
+// can talk to this server unchanged.
 type TranscribeJob struct {
 	ID           string `json:"id"`
 	Path         string `json:"path"`
