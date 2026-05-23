@@ -28,23 +28,27 @@ async function onCancel(e: Event) {
 <template>
   <NuxtLink
     :to="`/jobs/${job.id}`"
-    class="block bg-surface border border-line hover:border-line-strong hover:shadow-sm rounded-lg transition px-4 py-3"
+    class="block bg-surface-raise border border-border-1 hover:shadow-resting rounded-lg transition-shadow px-4 py-3"
   >
     <div class="flex items-center gap-4">
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 mb-1">
           <JobStatusBadge :status="job.status" />
-          <span class="text-xs text-muted font-mono">{{
+          <span class="text-caption-1 text-text-hint font-mono">{{
             job.id.slice(0, 8)
           }}</span>
-          <span class="text-xs text-line-strong">·</span>
-          <span class="text-xs text-fg-muted">{{ job.model || "—" }}</span>
+          <span class="text-caption-1 text-text-hint">·</span>
+          <span class="text-caption-1 text-text-muted">{{
+            job.model || "—"
+          }}</span>
           <template v-if="job.language">
-            <span class="text-xs text-line-strong">·</span>
-            <span class="text-xs text-fg-muted">{{ job.language }}</span>
+            <span class="text-caption-1 text-text-hint">·</span>
+            <span class="text-caption-1 text-text-muted">{{
+              job.language
+            }}</span>
           </template>
         </div>
-        <div class="text-sm text-fg truncate font-mono">
+        <div class="text-body-3 text-text-default truncate font-mono">
           {{ job.path }}
         </div>
       </div>
@@ -57,7 +61,7 @@ async function onCancel(e: Event) {
         />
         <span
           v-else-if="job.status === 'COMPLETED' && job.duration"
-          class="text-xs text-muted"
+          class="text-caption-1 text-text-hint"
         >
           {{ job.duration }}
         </span>
@@ -68,7 +72,7 @@ async function onCancel(e: Event) {
           :loading="canceling"
           title="Cancel job"
           aria-label="Cancel job"
-          class="text-muted hover:text-danger-600!"
+          class="text-text-hint hover:text-semantic-error!"
           @click="onCancel"
         >
           <Icon v-if="!canceling" name="tabler:circle-x" size="20" />

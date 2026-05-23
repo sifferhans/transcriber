@@ -65,20 +65,18 @@ async function submit() {
 }
 
 const inputClass =
-  "w-full px-3 py-2 border border-line rounded-md text-sm font-mono bg-surface text-fg placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500";
+  "w-full px-3 py-2 border border-border-1 rounded-md text-body-3 font-mono bg-surface-default text-text-default placeholder:text-text-hint";
 const selectClass =
-  "w-full px-3 py-2 border border-line rounded-md text-sm bg-surface text-fg focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500";
-const labelClass = "block text-xs font-medium text-fg mb-1";
+  "w-full px-3 py-2 border border-border-1 rounded-md text-body-3 bg-surface-default text-text-default";
+const labelClass = "block text-caption-1 text-text-default mb-1";
 </script>
 
 <template>
   <form
-    class="bg-surface border border-line rounded-lg p-6 space-y-4"
+    class="bg-surface-raise border border-border-1 rounded-lg p-6 space-y-4 shadow-resting"
     @submit.prevent="submit"
   >
-    <h2 class="text-base font-semibold tracking-tight text-fg">
-      New transcription job
-    </h2>
+    <h2 class="text-title-1 text-text-default">New transcription job</h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
@@ -136,7 +134,7 @@ const labelClass = "block text-xs font-medium text-fg mb-1";
       </div>
     </div>
 
-    <div v-if="error" class="text-sm text-danger-600">{{ error }}</div>
+    <div v-if="error" class="text-body-3 text-semantic-error">{{ error }}</div>
 
     <div class="flex items-center justify-end gap-2">
       <DesignButton variant="ghost" @click="emit('cancel')"> Cancel </DesignButton>

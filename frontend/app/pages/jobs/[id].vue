@@ -25,28 +25,28 @@ async function onCancel() {
   <div>
     <NuxtLink
       to="/"
-      class="text-sm text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-1 mb-4"
+      class="text-body-3 text-primary-default hover:text-primary-contrast hover:underline inline-flex items-center gap-1 mb-4"
     >
       <Icon name="tabler:arrow-left" /> Back to jobs
     </NuxtLink>
 
     <div
       v-if="error"
-      class="bg-danger-50 text-danger-800 border border-danger-200 rounded-md px-4 py-3 text-sm"
+      class="bg-semantic-error/10 text-semantic-error ring-1 ring-semantic-error/30 rounded-md px-4 py-3 text-body-3"
     >
       {{ error }}
     </div>
 
-    <div v-else-if="!job && loading" class="text-muted">Loading…</div>
+    <div v-else-if="!job && loading" class="text-text-hint">Loading…</div>
 
     <div
       v-else-if="job"
-      class="bg-surface border border-line rounded-lg p-6 space-y-6"
+      class="bg-surface-raise border border-border-1 rounded-lg p-6 space-y-6 shadow-resting"
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <JobStatusBadge :status="job.status" />
-          <span class="font-mono text-sm text-muted">{{ job.id }}</span>
+          <span class="font-mono text-body-3 text-text-hint">{{ job.id }}</span>
         </div>
         <DesignButton
           v-if="canCancel"
@@ -62,7 +62,7 @@ async function onCancel() {
 
       <div v-if="job.status === 'RUNNING'">
         <div
-          class="flex items-center justify-between mb-1 text-xs text-fg-muted"
+          class="flex items-center justify-between mb-1 text-caption-1 text-text-muted"
         >
           <span>Progress</span>
           <span>{{ job.progress }}%</span>
@@ -81,18 +81,18 @@ async function onCancel() {
         <Detail label="Callback">{{ job.callback || "—" }}</Detail>
       </dl>
 
-      <div v-if="job.result" class="border-t border-line pt-4">
+      <div v-if="job.result" class="border-t border-border-1 pt-4">
         <Detail label="Result">{{ job.result }}</Detail>
       </div>
 
-      <div v-if="job.error" class="border-t border-line pt-4">
+      <div v-if="job.error" class="border-t border-border-1 pt-4">
         <div
-          class="text-xs font-medium text-danger-700 uppercase tracking-wider mb-1"
+          class="text-caption-2 text-semantic-error uppercase tracking-wider mb-1"
         >
           Error
         </div>
         <pre
-          class="text-sm text-danger-800 bg-danger-50 p-3 rounded-md font-mono overflow-x-auto whitespace-pre-wrap"
+          class="text-body-3 text-semantic-error bg-semantic-error/10 p-3 rounded-md font-mono overflow-x-auto whitespace-pre-wrap"
           >{{ job.error }}</pre
         >
       </div>

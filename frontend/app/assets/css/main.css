@@ -1,74 +1,242 @@
 @import "tailwindcss";
 
 /*
- * Design tokens.
+ * Design system.
  *
- * Tailwind v4 generates utility classes from every variable in @theme:
- *   --color-brand-600  → bg-brand-600 / text-brand-600 / border-brand-600 / ring-brand-600
- *   --color-fg         → text-fg / bg-fg
- *   --color-canvas     → bg-canvas
- *   --radius-lg        → rounded-lg
- *   --font-display     → font-display
+ * Two-level indirection:
+ *   --color-primary-default    (Tailwind theme token, generates utilities)
+ *     └→ var(--ds-primary-default)
+ *           └→ #8b5cf6 in :root, #a78bfa in [data-theme=dark]
  *
- * Color scales are aliased to Tailwind's built-in palette so we can swap the
- * brand from "indigo" to something else by editing this one block; consumers
- * use the semantic name and don't need to change.
+ * Components only ever reference the Tailwind tokens (`bg-primary-default`,
+ * `text-text-muted`, etc.). To rebrand or theme, override the `--ds-*`
+ * variables in :root / [data-theme=dark] — utilities update via cascade.
  */
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 @theme {
-  /* Brand */
-  --color-brand-50: var(--color-indigo-50);
-  --color-brand-100: var(--color-indigo-100);
-  --color-brand-200: var(--color-indigo-200);
-  --color-brand-500: var(--color-indigo-500);
-  --color-brand-600: var(--color-indigo-600);
-  --color-brand-700: var(--color-indigo-700);
-
-  /* Status tones */
-  --color-success-50: var(--color-emerald-50);
-  --color-success-100: var(--color-emerald-100);
-  --color-success-200: var(--color-emerald-200);
-  --color-success-500: var(--color-emerald-500);
-  --color-success-700: var(--color-emerald-700);
-
-  --color-warning-50: var(--color-amber-50);
-  --color-warning-100: var(--color-amber-100);
-  --color-warning-200: var(--color-amber-200);
-  --color-warning-500: var(--color-amber-500);
-  --color-warning-700: var(--color-amber-700);
-
-  --color-danger-50: var(--color-red-50);
-  --color-danger-100: var(--color-red-100);
-  --color-danger-200: var(--color-red-200);
-  --color-danger-500: var(--color-red-500);
-  --color-danger-600: var(--color-red-600);
-  --color-danger-700: var(--color-red-700);
-  --color-danger-800: var(--color-red-800);
-
-  --color-info-50: var(--color-sky-50);
-  --color-info-100: var(--color-sky-100);
-  --color-info-200: var(--color-sky-200);
-  --color-info-500: var(--color-sky-500);
-  --color-info-700: var(--color-sky-700);
-
-  /* Surfaces & text */
-  --color-canvas: var(--color-slate-50); /* page background */
-  --color-surface: #ffffff; /* cards, panels */
-  --color-line: var(--color-slate-200); /* default border */
-  --color-line-strong: var(--color-slate-300); /* hovered/focused border */
-
-  --color-fg: var(--color-slate-900); /* primary text */
-  --color-fg-muted: var(--color-slate-600); /* secondary text */
-  --color-muted: var(--color-slate-500); /* placeholders, captions */
-
-  /* Radii */
-  --radius-xs: 0.125rem;
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-
   /* Fonts */
-  --font-display:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono:
     ui-monospace, "SF Mono", Menlo, Monaco, "Cascadia Code", monospace;
+
+  /* Primary / accent */
+  --color-primary-default: var(--ds-primary-default);
+  --color-primary-contrast: var(--ds-primary-contrast);
+  --color-on-primary: var(--ds-on-primary);
+
+  /* Surfaces */
+  --color-surface-default: var(--ds-surface-default);
+  --color-surface-indent: var(--ds-surface-indent);
+  --color-surface-raise: var(--ds-surface-raise);
+
+  /* Text — themed */
+  --color-text-default: var(--ds-text-default);
+  --color-text-muted: var(--ds-text-muted);
+  --color-text-hint: var(--ds-text-hint);
+
+  /* Text — fixed light (always white-ish, e.g. for over-image overlays) */
+  --color-text-light-default: var(--ds-text-light-default);
+  --color-text-light-muted: var(--ds-text-light-muted);
+  --color-text-light-hint: var(--ds-text-light-hint);
+
+  /* Text — fixed dark (always black-ish) */
+  --color-text-dark-default: var(--ds-text-dark-default);
+  --color-text-dark-muted: var(--ds-text-dark-muted);
+  --color-text-dark-hint: var(--ds-text-dark-hint);
+
+  /* Borders */
+  --color-border-1: var(--ds-border-1);
+
+  /* Semantic */
+  --color-semantic-error: var(--ds-semantic-error);
+  --color-semantic-success: var(--ds-semantic-success);
+  --color-semantic-warning: var(--ds-semantic-warning);
+  --color-semantic-info: var(--ds-semantic-info);
+
+  /* Focus ring */
+  --color-focus-ring: var(--ds-focus-ring);
+
+  /* Typography presets (each generates a `text-X` utility that sets
+     font-size + line-height + font-weight + letter-spacing). */
+  --text-heading-1: 48px;
+  --text-heading-1--line-height: 1.08;
+  --text-heading-1--font-weight: 700;
+  --text-heading-1--letter-spacing: -0.14px;
+
+  --text-heading-2: 32px;
+  --text-heading-2--line-height: 1.13;
+  --text-heading-2--font-weight: 600;
+  --text-heading-2--letter-spacing: -0.1px;
+
+  --text-heading-3: 22px;
+  --text-heading-3--line-height: 1.27;
+  --text-heading-3--font-weight: 700;
+  --text-heading-3--letter-spacing: -0.07px;
+
+  --text-title-1: 19px;
+  --text-title-1--line-height: 1.26;
+  --text-title-1--font-weight: 500;
+
+  --text-title-2: 17px;
+  --text-title-2--line-height: 1.18;
+  --text-title-2--font-weight: 500;
+
+  --text-title-3: 15px;
+  --text-title-3--line-height: 1.07;
+  --text-title-3--font-weight: 500;
+
+  --text-body-1: 18px;
+  --text-body-1--line-height: 1.11;
+  --text-body-1--font-weight: 400;
+
+  --text-body-2: 16px;
+  --text-body-2--line-height: 1.25;
+  --text-body-2--font-weight: 400;
+
+  --text-body-3: 14px;
+  --text-body-3--line-height: 1.4;
+  --text-body-3--font-weight: 400;
+  --text-body-3--letter-spacing: -0.04px;
+
+  --text-caption-1: 12px;
+  --text-caption-1--line-height: 1.33;
+  --text-caption-1--font-weight: 500;
+  --text-caption-1--letter-spacing: -0.04px;
+
+  --text-caption-2: 11px;
+  --text-caption-2--line-height: 1.27;
+  --text-caption-2--font-weight: 500;
+  --text-caption-2--letter-spacing: -0.04px;
+
+  /* Easing */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Shadows */
+  --shadow-resting:
+    0 0 0 1px rgb(0 0 0 / 0.04), 0 0 3px rgb(0 0 0 / 0.05),
+    0 2px 6px rgb(0 0 0 / 0.05);
+  --shadow-floating:
+    0 0 0 1px rgb(0 0 0 / 0.05), 0 1px 4px rgb(0 0 0 / 0.05),
+    0 4px 12px rgb(0 0 0 / 0.05);
+}
+
+@layer base {
+  :root {
+    /* Light theme — violet primary. */
+    --ds-primary-default: #8b5cf6;
+    --ds-primary-contrast: #7c3aed;
+    --ds-on-primary: #ffffff;
+
+    --ds-surface-default: #ffffff;
+    --ds-surface-indent: #f5f5f7;
+    --ds-surface-raise: #ffffff;
+
+    --ds-text-default: #14121a;
+    --ds-text-muted: #555560;
+    --ds-text-hint: #9b9ba3;
+
+    --ds-text-light-default: #ffffff;
+    --ds-text-light-muted: rgb(255 255 255 / 0.8);
+    --ds-text-light-hint: rgb(255 255 255 / 0.6);
+
+    --ds-text-dark-default: #000000;
+    --ds-text-dark-muted: rgb(0 0 0 / 0.8);
+    --ds-text-dark-hint: rgb(0 0 0 / 0.6);
+
+    --ds-border-1: rgb(20 18 26 / 0.1);
+
+    --ds-semantic-error: #dc2626;
+    --ds-semantic-success: #16a34a;
+    --ds-semantic-warning: #ca8a04;
+    --ds-semantic-info: #2563eb;
+
+    --ds-focus-ring: #8b5cf6;
+  }
+
+  [data-theme="dark"] {
+    /* Dark theme — same primary hue, lifted for legibility on dark surfaces. */
+    --ds-primary-default: #a78bfa;
+    --ds-primary-contrast: #8b5cf6;
+    --ds-on-primary: #14121a;
+
+    --ds-surface-default: #14121a;
+    --ds-surface-indent: rgb(0 0 0 / 0.5);
+    --ds-surface-raise: #1f1d29;
+
+    --ds-text-default: #ffffff;
+    --ds-text-muted: #bdbdc7;
+    --ds-text-hint: #8b8b94;
+
+    --ds-border-1: rgb(255 255 255 / 0.1);
+
+    --ds-semantic-error: #ef4444;
+    --ds-semantic-success: #22c55e;
+    --ds-semantic-warning: #eab308;
+    --ds-semantic-info: #3b82f6;
+
+    --ds-focus-ring: #a78bfa;
+  }
+
+  html,
+  body {
+    background-color: var(--color-surface-default);
+    color: var(--color-text-default);
+    font-family: var(--font-sans);
+  }
+
+  /* Visible focus ring for keyboard navigation. :where() has zero specificity
+     so components can override when needed. */
+  :where(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [tabindex]:not([tabindex="-1"])
+  ):focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility spinner-rotate {
+  animation: spinner-spin 0.75s linear infinite;
+}
+
+@utility spinner-segment {
+  stroke-dasharray: 62.83;
+  animation: spinner-stretch 1.5s cubic-bezier(0.35, 0, 0.65, 1) infinite;
+}
+
+@keyframes spinner-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinner-stretch {
+  0% {
+    stroke-dashoffset: 47.12;
+  }
+  50% {
+    stroke-dashoffset: 15.71;
+  }
+  100% {
+    stroke-dashoffset: 47.12;
+  }
 }

@@ -9,6 +9,9 @@ export default defineNuxtConfig({
   ssr: false,
   css: ["~/assets/css/main.css"],
   modules: ["@nuxt/icon", "@nuxt/fonts"],
+  // Disable the directory-name component prefix so `components/design/Foo.vue`
+  // auto-imports as `<Foo>`, not `<DesignFoo>`.
+  components: [{ path: "~/components", pathPrefix: false }],
   vite: {
     plugins: [tailwindcss()],
   },

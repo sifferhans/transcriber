@@ -14,12 +14,10 @@ async function onCreated(_job: TranscribeJob) {
   <div>
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h1 class="text-2xl font-semibold tracking-tight text-fg">
-          Transcription jobs
-        </h1>
-        <p class="text-sm text-fg-muted mt-1">
+        <h1 class="text-heading-2 text-text-default">Transcription jobs</h1>
+        <p class="text-body-3 text-text-muted mt-1">
           {{ jobs.length }} total
-          <span v-if="loading" class="ml-2 text-muted">refreshing…</span>
+          <span v-if="loading" class="ml-2 text-text-hint">refreshing…</span>
         </p>
       </div>
       <DesignButton
@@ -40,19 +38,19 @@ async function onCreated(_job: TranscribeJob) {
 
     <div
       v-if="error"
-      class="bg-danger-50 text-danger-800 border border-danger-200 rounded-md px-4 py-3 mb-4 text-sm"
+      class="bg-semantic-error/10 text-semantic-error ring-1 ring-semantic-error/30 rounded-md px-4 py-3 mb-4 text-body-3"
     >
       {{ error }}
     </div>
 
     <div
       v-if="!jobs.length && !loading"
-      class="text-center py-16 text-fg-muted border border-dashed border-line rounded-lg"
+      class="text-center py-16 text-text-muted border border-dashed border-border-1 rounded-lg"
     >
       <Icon
         name="tabler:wave-saw-tool"
         size="32"
-        class="mx-auto mb-2 text-line-strong"
+        class="mx-auto mb-2 text-text-hint"
       />
       <p>No jobs yet. Click "New job" to start one.</p>
     </div>

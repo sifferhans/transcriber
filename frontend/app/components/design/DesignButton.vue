@@ -1,7 +1,10 @@
 <script setup lang="ts">
 // DesignButton is the primary button primitive of the design system.
-// Variants combine semantic color tokens (brand/danger/etc.) with size scales.
-// Consumers should reach for this rather than hand-rolling Tailwind classes.
+// Tokens (primary-default / on-primary / surface-* / text-*) ensure variants
+// stay coherent across light and dark themes.
+//
+// Focus styling is handled globally by main.css (the :where() rule); we do
+// not set per-component focus rings.
 
 type Variant = "primary" | "secondary" | "ghost" | "danger" | "link";
 type Size = "sm" | "md" | "lg" | "icon";
@@ -27,21 +30,22 @@ withDefaults(
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-brand-600 hover:bg-brand-700 text-white shadow-sm focus-visible:ring-brand-500/40",
+    "bg-primary-default hover:bg-primary-contrast text-on-primary shadow-resting",
   secondary:
-    "bg-surface hover:bg-canvas text-fg border border-line hover:border-line-strong focus-visible:ring-brand-500/40",
+    "bg-surface-raise hover:bg-surface-indent text-text-default border border-border-1",
   ghost:
-    "bg-transparent hover:bg-canvas text-fg-muted hover:text-fg focus-visible:ring-brand-500/40",
+    "bg-transparent hover:bg-surface-indent text-text-muted hover:text-text-default",
   danger:
-    "bg-danger-600 hover:bg-danger-700 text-white shadow-sm focus-visible:ring-danger-500/40",
-  link: "bg-transparent text-brand-600 hover:text-brand-700 hover:underline focus-visible:ring-brand-500/40 px-0!",
+    "bg-semantic-error hover:bg-semantic-error/90 text-white shadow-resting",
+  link:
+    "bg-transparent text-primary-default hover:text-primary-contrast hover:underline px-0!",
 };
 
 const sizes: Record<Size, string> = {
-  sm: "px-2.5 py-1 text-xs gap-1 rounded-sm",
-  md: "px-4 py-2 text-sm gap-2 rounded-md",
-  lg: "px-5 py-2.5 text-base gap-2 rounded-md",
-  icon: "p-1.5 text-sm rounded-md",
+  sm: "px-2.5 py-1 text-caption-1 gap-1 rounded-sm",
+  md: "px-4 py-2 text-title-3 gap-2 rounded-md",
+  lg: "px-5 py-2.5 text-title-2 gap-2 rounded-md",
+  icon: "p-1.5 text-title-3 rounded-md",
 };
 </script>
 
@@ -50,20 +54,33 @@ const sizes: Record<Size, string> = {
     :type="type"
     :disabled="disabled || loading"
     :class="[
-      'inline-flex items-center justify-center font-medium font-display transition-colors',
+      'inline-flex items-center justify-center transition-colors',
       'disabled:opacity-50 disabled:cursor-not-allowed',
-      'focus:outline-none focus-visible:ring-2',
       variants[variant],
       sizes[size],
       block && 'w-full',
     ]"
   >
-    <Icon
+    <!-- SVG spinner uses the spinner-rotate / spinner-segment utilities. -->
+    <svg
       v-if="loading"
-      name="tabler:loader-2"
-      class="animate-spin"
-      :size="size === 'sm' ? '14' : '16'"
-    />
+      class="spinner-rotate"
+      :width="size === 'sm' ? 12 : 14"
+      :height="size === 'sm' ? 12 : 14"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle
+        class="spinner-segment"
+        cx="12"
+        cy="12"
+        r="10"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+      />
+    </svg>
     <slot />
   </button>
 </template>

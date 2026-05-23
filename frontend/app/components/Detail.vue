@@ -4,10 +4,10 @@ defineProps<{ label: string }>();
 
 <template>
   <div>
-    <dt class="text-xs font-medium text-muted uppercase tracking-wider mb-1">
+    <dt class="text-caption-2 text-text-hint uppercase tracking-wider mb-1">
       {{ label }}
     </dt>
-    <dd class="text-sm text-fg font-mono break-all">
+    <dd class="text-body-3 text-text-default font-mono break-all">
       <slot />
     </dd>
   </div>
