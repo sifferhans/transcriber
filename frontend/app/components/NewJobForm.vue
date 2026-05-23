@@ -135,15 +135,9 @@ async function submit() {
     </DesignBanner>
 
     <div class="flex items-center justify-end gap-2">
-      <DesignButton
-        variant="tertiary"
-        size="small"
-        label="Cancel"
-        @click="emit('cancel')"
-      />
+      <DesignButton variant="tertiary" label="Cancel" @click="emit('cancel')" />
       <DesignButton
         type="submit"
-        size="small"
         :loading="submitting"
         :label="submitting ? 'Submitting…' : 'Submit'"
       />

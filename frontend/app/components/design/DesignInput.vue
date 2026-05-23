@@ -50,7 +50,7 @@ const props = withDefaults(
 const model = defineModel<string | number | boolean | undefined>();
 
 const fieldClass = (hasError: boolean) => [
-  "w-full rounded-md border bg-surface-default text-text-default text-body-2 px-3 py-2",
+  "w-full rounded-xl border bg-surface-default text-text-default text-body-2 px-3 py-2",
   props.monospace && "font-mono",
   hasError ? "border-semantic-error" : "border-border-1",
 ];
