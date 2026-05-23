@@ -12,12 +12,15 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-  // Proxy /api/transcriber/** to the Go API. The browser talks only to the
-  // Nuxt origin so there's no CORS to configure and the backend URL never
-  // ends up in the client bundle.
+  // In dev (`pnpm dev`) the frontend runs on :3000 and the Go API on :8888,
+  // so we proxy each API path through Nuxt to keep the browser same-origin.
+  // In the embedded production build (`make build`) the Go binary serves
+  // both the SPA and the API on the same port, so these paths resolve
+  // natively — the frontend code uses identical URLs in both modes.
   routeRules: {
-    "/api/transcriber/**": {
-      proxy: { to: `${TRANSCRIBER_API}/**` },
-    },
+    "/transcription/**": { proxy: `${TRANSCRIBER_API}/transcription/**` },
+    "/models": { proxy: `${TRANSCRIBER_API}/models` },
+    "/healthz": { proxy: `${TRANSCRIBER_API}/healthz` },
+    "/readyz": { proxy: `${TRANSCRIBER_API}/readyz` },
   },
 });

@@ -21,7 +21,10 @@ func NewServer(store *jobs.Store, queue *jobs.Queue, registry *transcriber.Regis
 	return &Server{store: store, queue: queue, registry: registry}
 }
 
-func (s *Server) Routes() http.Handler {
+// Routes returns the HTTP handler. If staticHandler is non-nil it is
+// mounted at "/" so the embedded SPA serves any non-API path; more
+// specific API patterns still win under Go 1.22 ServeMux precedence.
+func (s *Server) Routes(staticHandler http.Handler) http.Handler {
 	mux := http.NewServeMux()
 	// Drop-in compatible endpoints (match the existing Python API).
 	mux.HandleFunc("POST /transcription/job", s.createJob)
@@ -32,6 +35,9 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /models", s.listModels)
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /readyz", s.ready)
+	if staticHandler != nil {
+		mux.Handle("/", staticHandler)
+	}
 	return mux
 }
 

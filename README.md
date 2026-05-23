@@ -19,16 +19,35 @@ internal/transcriber/   adapter interface
   └─ fasterwhisper/     shells out to whisper-ctranslate2
 internal/formats/       json / srt / vtt / txt writers
 internal/callback/      goroutine pool that POSTs webhooks
+internal/web/           embedded SPA (//go:embed dist/* + SPA fallback)
+frontend/               Nuxt 4 SPA (ssr: false) — pnpm generate output
+                          is copied into internal/web/dist by `make frontend`
 ```
 
 ## Run
 
+Two modes:
+
+**Development** — Go API + Nuxt dev server with hot reload.
+
 ```sh
-go run ./cmd/transcriber
+make dev            # both at once; Ctrl-C stops both
+# or in separate terminals:
+make dev-api        # Go on :8888
+make dev-frontend   # Nuxt on :3000 (proxies API calls)
 ```
 
-That's it — defaults to the `stub` adapter on `:8888` with 2 workers, no
-external backend required.
+**Single-binary** — SPA embedded in the Go binary, both served from `:8888`.
+
+```sh
+make build          # pnpm generate → internal/web/dist → go build
+./transcriber
+```
+
+Both default to the `stub` adapter so they work without any ASR backend
+installed. To run the API alone without the SPA build step:
+`go run ./cmd/transcriber` (the binary ships with a placeholder
+`index.html`).
 
 ## Configuration
 

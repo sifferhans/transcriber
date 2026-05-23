@@ -14,6 +14,7 @@ import (
 	"github.com/bcc-code/transcriber/internal/api"
 	"github.com/bcc-code/transcriber/internal/callback"
 	"github.com/bcc-code/transcriber/internal/jobs"
+	"github.com/bcc-code/transcriber/internal/web"
 	"github.com/bcc-code/transcriber/internal/worker"
 )
 
@@ -50,7 +51,7 @@ func main() {
 	addr := fmt.Sprintf(":%d", *port)
 	httpSrv := &http.Server{
 		Addr:              addr,
-		Handler:           srv.Routes(),
+		Handler:           srv.Routes(web.Handler()),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
