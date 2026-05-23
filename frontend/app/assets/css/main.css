@@ -18,9 +18,11 @@
 @theme {
   /* Fonts */
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
   --font-mono:
-    ui-monospace, "SF Mono", Menlo, Monaco, "Cascadia Code", monospace;
+    "DM Mono", ui-monospace, "SF Mono", Menlo, Monaco, "Cascadia Code",
+    monospace;
 
   /* Primary / accent */
   --color-primary-default: var(--ds-primary-default);
