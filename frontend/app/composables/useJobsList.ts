@@ -15,9 +15,7 @@ export function useJobsList() {
   let alive = true;
 
   const hasActive = computed(() =>
-    jobs.value.some(
-      (j) => j.status === "PENDING" || j.status === "RUNNING",
-    ),
+    jobs.value.some((j) => j.status === "PENDING" || j.status === "RUNNING"),
   );
 
   async function fetchOnce() {

@@ -24,11 +24,7 @@ const styles: Record<Kind, { bg: string; icon: string }> = {
 </script>
 
 <template>
-  <div
-    v-if="open"
-    role="alert"
-    class="fixed top-4 right-4 z-50"
-  >
+  <div v-if="open" role="alert" class="fixed top-4 right-4 z-50">
     <div
       :class="[
         'flex items-start gap-3 p-4 rounded-md shadow-floating w-80 sm:w-96 max-w-80 sm:max-w-96 text-wrap text-body-3 text-text-light-default',

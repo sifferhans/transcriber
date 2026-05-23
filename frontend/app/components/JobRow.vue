@@ -28,7 +28,7 @@ async function onCancel(e: Event) {
 <template>
   <NuxtLink
     :to="`/jobs/${job.id}`"
-    class="block bg-surface-raise border border-border-1 hover:shadow-resting rounded-lg transition-shadow px-4 py-3"
+    class="block bg-surface-raise gradient-border shadow-resting hover:shadow-floating rounded-2xl transition-shadow p-4"
   >
     <div class="flex items-center gap-4">
       <div class="flex-1 min-w-0">
@@ -67,8 +67,8 @@ async function onCancel(e: Event) {
         </span>
         <DesignButton
           v-if="canCancel"
-          variant="ghost"
-          size="icon"
+          variant="tertiary"
+          size="small"
           :loading="canceling"
           title="Cancel job"
           aria-label="Cancel job"

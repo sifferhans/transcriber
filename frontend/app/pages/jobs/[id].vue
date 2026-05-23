@@ -40,7 +40,7 @@ async function onCancel() {
 
     <div
       v-else-if="job"
-      class="bg-surface-raise border border-border-1 rounded-lg p-6 space-y-6 shadow-resting"
+      class="bg-surface-raise gradient-border rounded-3xl p-6 space-y-6 shadow-resting"
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -83,11 +83,7 @@ async function onCancel() {
         <Detail label="Result">{{ job.result }}</Detail>
       </div>
 
-      <DesignBanner
-        v-if="job.error"
-        variant="error"
-        icon="tabler:alert-circle"
-      >
+      <DesignBanner v-if="job.error" variant="error" icon="tabler:alert-circle">
         <span class="font-mono">{{ job.error }}</span>
       </DesignBanner>
     </div>

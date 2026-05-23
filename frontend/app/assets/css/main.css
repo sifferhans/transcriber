@@ -128,18 +128,18 @@
 
 @layer base {
   :root {
-    /* Light theme — violet primary. */
-    --ds-primary-default: #8b5cf6;
-    --ds-primary-contrast: #7c3aed;
+    /* Light theme — neutral grayscale. */
+    --ds-primary-default: #18181b;
+    --ds-primary-contrast: #000000;
     --ds-on-primary: #ffffff;
 
     --ds-surface-default: #ffffff;
-    --ds-surface-indent: #f5f5f7;
+    --ds-surface-indent: #f4f4f5;
     --ds-surface-raise: #ffffff;
 
-    --ds-text-default: #14121a;
-    --ds-text-muted: #555560;
-    --ds-text-hint: #9b9ba3;
+    --ds-text-default: #18181b;
+    --ds-text-muted: #52525b;
+    --ds-text-hint: #a1a1aa;
 
     --ds-text-light-default: #ffffff;
     --ds-text-light-muted: rgb(255 255 255 / 0.8);
@@ -149,38 +149,38 @@
     --ds-text-dark-muted: rgb(0 0 0 / 0.8);
     --ds-text-dark-hint: rgb(0 0 0 / 0.6);
 
-    --ds-border-1: rgb(20 18 26 / 0.1);
+    --ds-border-1: rgb(24 24 27 / 0.1);
 
-    --ds-semantic-error: #dc2626;
-    --ds-semantic-success: #16a34a;
-    --ds-semantic-warning: #ca8a04;
-    --ds-semantic-info: #2563eb;
+    --ds-semantic-error: #525252;
+    --ds-semantic-success: #404040;
+    --ds-semantic-warning: #737373;
+    --ds-semantic-info: #404040;
 
-    --ds-focus-ring: #8b5cf6;
+    --ds-focus-ring: #18181b;
   }
 
   [data-theme="dark"] {
-    /* Dark theme — same primary hue, lifted for legibility on dark surfaces. */
-    --ds-primary-default: #a78bfa;
-    --ds-primary-contrast: #8b5cf6;
-    --ds-on-primary: #14121a;
+    /* Dark theme — neutral grayscale. */
+    --ds-primary-default: #fafafa;
+    --ds-primary-contrast: #ffffff;
+    --ds-on-primary: #18181b;
 
-    --ds-surface-default: #14121a;
+    --ds-surface-default: #0a0a0a;
     --ds-surface-indent: rgb(0 0 0 / 0.5);
-    --ds-surface-raise: #1f1d29;
+    --ds-surface-raise: #1a1a1a;
 
-    --ds-text-default: #ffffff;
-    --ds-text-muted: #bdbdc7;
-    --ds-text-hint: #8b8b94;
+    --ds-text-default: #fafafa;
+    --ds-text-muted: #b4b4b8;
+    --ds-text-hint: #71717a;
 
     --ds-border-1: rgb(255 255 255 / 0.1);
 
-    --ds-semantic-error: #ef4444;
-    --ds-semantic-success: #22c55e;
-    --ds-semantic-warning: #eab308;
-    --ds-semantic-info: #3b82f6;
+    --ds-semantic-error: #a3a3a3;
+    --ds-semantic-success: #d4d4d4;
+    --ds-semantic-warning: #a3a3a3;
+    --ds-semantic-info: #d4d4d4;
 
-    --ds-focus-ring: #a78bfa;
+    --ds-focus-ring: #fafafa;
   }
 
   html,

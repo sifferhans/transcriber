@@ -16,9 +16,11 @@ const props = withDefaults(
 
 const placements: Record<Placement, string> = {
   top: "bottom-full left-1/2 -translate-x-1/2 mb-[var(--tooltip-gap)] origin-bottom",
-  bottom: "top-full left-1/2 -translate-x-1/2 mt-[var(--tooltip-gap)] origin-top",
+  bottom:
+    "top-full left-1/2 -translate-x-1/2 mt-[var(--tooltip-gap)] origin-top",
   left: "right-full top-1/2 -translate-y-1/2 mr-[var(--tooltip-gap)] origin-right",
-  right: "left-full top-1/2 -translate-y-1/2 ml-[var(--tooltip-gap)] origin-left",
+  right:
+    "left-full top-1/2 -translate-y-1/2 ml-[var(--tooltip-gap)] origin-left",
 };
 </script>
 

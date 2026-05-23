@@ -49,11 +49,13 @@ const base = [
   "transition-transform duration-200 ease-out-expo active:scale-95",
   "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
 ];
+
+const nuxtLink = resolveComponent("NuxtLink");
 </script>
 
 <template>
   <component
-    :is="to ? 'NuxtLink' : 'button'"
+    :is="to ? nuxtLink : 'button'"
     :to="to"
     :type="to ? undefined : type"
     :disabled="to ? undefined : disabled || loading"

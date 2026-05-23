@@ -5,7 +5,10 @@
 
 <template>
   <header
-    :class="[$slots.actions && 'flex items-center justify-between gap-6', 'pb-4']"
+    :class="[
+      $slots.actions && 'flex items-center justify-between gap-6',
+      'pb-4',
+    ]"
   >
     <div>
       <h1 class="text-heading-3 text-text-default"><slot /></h1>
