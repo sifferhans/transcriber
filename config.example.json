@@ -1,0 +1,26 @@
+{
+  "server": {
+    "port": 8888,
+    "workers": 2,
+    "callback_workers": 2
+  },
+  "default_model": "stub",
+  "models": {
+    "stub": {
+      "adapter": "stub"
+    },
+    "whisper-cpp-large-v3": {
+      "adapter": "whisper-cpp",
+      "binary": "/usr/local/bin/whisper-cli",
+      "model_file": "/models/ggml-large-v3.bin",
+      "threads": 8
+    },
+    "faster-whisper-large-v3": {
+      "adapter": "faster-whisper",
+      "binary": "/usr/local/bin/whisper-ctranslate2",
+      "model": "large-v3",
+      "compute_type": "float16",
+      "device": "cuda"
+    }
+  }
+}
