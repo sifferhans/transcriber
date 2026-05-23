@@ -153,10 +153,10 @@
 
     --ds-border-1: rgb(24 24 27 / 0.1);
 
-    --ds-semantic-error: #525252;
-    --ds-semantic-success: #404040;
-    --ds-semantic-warning: #737373;
-    --ds-semantic-info: #404040;
+    --ds-semantic-error: #d73535;
+    --ds-semantic-success: #4ccb46;
+    --ds-semantic-warning: #d49736;
+    --ds-semantic-info: #5d94e7;
 
     --ds-focus-ring: #18181b;
   }
@@ -177,10 +177,10 @@
 
     --ds-border-1: rgb(255 255 255 / 0.1);
 
-    --ds-semantic-error: #a3a3a3;
-    --ds-semantic-success: #d4d4d4;
-    --ds-semantic-warning: #a3a3a3;
-    --ds-semantic-info: #d4d4d4;
+    --ds-semantic-error: #e06565;
+    --ds-semantic-success: #85de80;
+    --ds-semantic-warning: #e2b56e;
+    --ds-semantic-info: #87aee9;
 
     --ds-focus-ring: #fafafa;
   }

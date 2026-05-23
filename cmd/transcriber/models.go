@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/bcc-code/transcriber/internal/transcriber"
 	"github.com/bcc-code/transcriber/internal/transcriber/fasterwhisper"
@@ -21,12 +22,14 @@ import (
 func buildRegistry(defaultID string) *transcriber.Registry {
 	r := transcriber.NewRegistry(defaultID)
 
+	home, _ := os.UserHomeDir()
+
 	r.Register(stub.New("stub", "Stub Adapter"))
 
 	r.Register(whispercpp.New(whispercpp.Config{
 		ID:        "whisper-cpp-large-v3",
 		Binary:    envOr("WHISPER_CPP_BIN", "/opt/homebrew/bin/whisper-cli"),
-		ModelFile: envOr("WHISPER_CPP_MODEL", "/models/ggml-large-v3.bin"),
+		ModelFile: envOr("WHISPER_CPP_MODEL", filepath.Join(home, "models", "ggml-base.bin")),
 		Threads:   8,
 	}))
 

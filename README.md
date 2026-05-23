@@ -54,20 +54,20 @@ installed. To run the API alone without the SPA build step:
 The set of registered models lives in `cmd/transcriber/models.go` as typed
 Go code. Server settings come from flags; per-machine paths from env vars.
 
-| Flag | Default | Meaning |
-| --- | --- | --- |
-| `-port` | `8888` | HTTP listen port |
-| `-workers` | `2` | concurrent transcription jobs |
-| `-callback-workers` | `2` | webhook delivery goroutines |
-| `-default-model` | `stub` | adapter ID used when the request omits `model` |
+| Flag                | Default | Meaning                                        |
+| ------------------- | ------- | ---------------------------------------------- |
+| `-port`             | `8888`  | HTTP listen port                               |
+| `-workers`          | `2`     | concurrent transcription jobs                  |
+| `-callback-workers` | `2`     | webhook delivery goroutines                    |
+| `-default-model`    | `stub`  | adapter ID used when the request omits `model` |
 
-| Env var | Default | Meaning |
-| --- | --- | --- |
-| `WHISPER_CPP_BIN` | `/opt/homebrew/bin/whisper-cli` | whisper.cpp binary |
-| `WHISPER_CPP_MODEL` | `/models/ggml-large-v3.bin` | whisper.cpp model file |
-| `FASTER_WHISPER_BIN` | `/usr/local/bin/whisper-ctranslate2` | faster-whisper CLI |
-| `FASTER_WHISPER_COMPUTE_TYPE` | `float16` | float16 / int8_float16 / int8 / ... |
-| `FASTER_WHISPER_DEVICE` | `cuda` | cuda / cpu / auto |
+| Env var                       | Default                              | Meaning                             |
+| ----------------------------- | ------------------------------------ | ----------------------------------- |
+| `WHISPER_CPP_BIN`             | `/opt/homebrew/bin/whisper-cli`      | whisper.cpp binary                  |
+| `WHISPER_CPP_MODEL`           | `$HOME/models/ggml-base.bin`         | whisper.cpp model file              |
+| `FASTER_WHISPER_BIN`          | `/usr/local/bin/whisper-ctranslate2` | faster-whisper CLI                  |
+| `FASTER_WHISPER_COMPUTE_TYPE` | `float16`                            | float16 / int8_float16 / int8 / ... |
+| `FASTER_WHISPER_DEVICE`       | `cuda`                               | cuda / cpu / auto                   |
 
 ## API
 

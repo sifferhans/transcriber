@@ -90,12 +90,16 @@ func (a *Adapter) Transcribe(ctx context.Context, req transcriber.Request, onPro
 		return nil, fmt.Errorf("whispercpp start: %w", err)
 	}
 
-	go scanProgress(stderr, onProgress)
+	capture := captureStderr(stderr, onProgress)
 	go io.Copy(io.Discard, stdout)
 
 	if err := cmd.Wait(); err != nil {
+		tail := capture.wait()
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
+		}
+		if tail != "" {
+			return nil, fmt.Errorf("whispercpp exit: %w: %s", err, tail)
 		}
 		return nil, fmt.Errorf("whispercpp exit: %w", err)
 	}
@@ -115,19 +119,45 @@ func (a *Adapter) Transcribe(ctx context.Context, req transcriber.Request, onPro
 	}, nil
 }
 
-func scanProgress(r io.Reader, onProgress transcriber.ProgressFunc) {
-	if onProgress == nil {
-		_, _ = io.Copy(io.Discard, r)
-		return
-	}
-	sc := bufio.NewScanner(r)
-	for sc.Scan() {
-		if m := progressRe.FindStringSubmatch(sc.Text()); m != nil {
-			if pct, err := strconv.Atoi(m[1]); err == nil {
-				onProgress(float64(pct) / 100.0)
+// stderrCapture reads whisper-cli's stderr, dispatches progress lines to
+// onProgress, and buffers the tail of non-progress lines so they can be
+// included in the exit error when the process fails.
+type stderrCapture struct {
+	done chan struct{}
+	tail []string
+}
+
+func captureStderr(r io.Reader, onProgress transcriber.ProgressFunc) *stderrCapture {
+	c := &stderrCapture{done: make(chan struct{})}
+	go func() {
+		defer close(c.done)
+		const maxTail = 20
+		sc := bufio.NewScanner(r)
+		for sc.Scan() {
+			line := sc.Text()
+			if m := progressRe.FindStringSubmatch(line); m != nil {
+				if onProgress != nil {
+					if pct, err := strconv.Atoi(m[1]); err == nil {
+						onProgress(float64(pct) / 100.0)
+					}
+				}
+				continue
+			}
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
+			c.tail = append(c.tail, line)
+			if len(c.tail) > maxTail {
+				c.tail = c.tail[len(c.tail)-maxTail:]
 			}
 		}
-	}
+	}()
+	return c
+}
+
+func (c *stderrCapture) wait() string {
+	<-c.done
+	return strings.Join(c.tail, "\n")
 }
 
 // whisper.cpp `--output-json` shape (timestamps in ms via offsets.from/to).
