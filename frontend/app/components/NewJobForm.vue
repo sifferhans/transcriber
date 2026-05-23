@@ -63,46 +63,45 @@ async function submit() {
     submitting.value = false;
   }
 }
+
+const inputClass =
+  "w-full px-3 py-2 border border-line rounded-md text-sm font-mono bg-surface text-fg placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500";
+const selectClass =
+  "w-full px-3 py-2 border border-line rounded-md text-sm bg-surface text-fg focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500";
+const labelClass = "block text-xs font-medium text-fg mb-1";
 </script>
 
 <template>
   <form
-    class="bg-white border border-slate-200 rounded-lg p-6 space-y-4"
+    class="bg-surface border border-line rounded-lg p-6 space-y-4"
     @submit.prevent="submit"
   >
-    <h2 class="text-base font-semibold tracking-tight">New transcription job</h2>
+    <h2 class="text-base font-semibold tracking-tight text-fg">
+      New transcription job
+    </h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
-        <label class="block text-xs font-medium text-slate-700 mb-1">
-          Audio file path
-        </label>
+        <label :class="labelClass">Audio file path</label>
         <input
           v-model="path"
           required
           placeholder="/mnt/storage/audio/foo.wav"
-          class="w-full px-3 py-2 border border-slate-300 rounded text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+          :class="inputClass"
         />
       </div>
       <div>
-        <label class="block text-xs font-medium text-slate-700 mb-1">
-          Output directory
-        </label>
+        <label :class="labelClass">Output directory</label>
         <input
           v-model="outputPath"
           required
           placeholder="/mnt/storage/out/foo/"
-          class="w-full px-3 py-2 border border-slate-300 rounded text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+          :class="inputClass"
         />
       </div>
       <div>
-        <label class="block text-xs font-medium text-slate-700 mb-1">
-          Model
-        </label>
-        <select
-          v-model="model"
-          class="w-full px-3 py-2 border border-slate-300 rounded text-sm bg-white"
-        >
+        <label :class="labelClass">Model</label>
+        <select v-model="model" :class="selectClass">
           <option value="">(server default)</option>
           <option v-for="m in models" :key="m.id" :value="m.id">
             {{ m.name }}{{ m.default ? " · default" : "" }}
@@ -110,24 +109,14 @@ async function submit() {
         </select>
       </div>
       <div>
-        <label class="block text-xs font-medium text-slate-700 mb-1">
-          Language
-        </label>
-        <select
-          v-model="language"
-          class="w-full px-3 py-2 border border-slate-300 rounded text-sm bg-white"
-        >
+        <label :class="labelClass">Language</label>
+        <select v-model="language" :class="selectClass">
           <option v-for="l in LANGS" :key="l.v" :value="l.v">{{ l.l }}</option>
         </select>
       </div>
       <div>
-        <label class="block text-xs font-medium text-slate-700 mb-1">
-          Format
-        </label>
-        <select
-          v-model="format"
-          class="w-full px-3 py-2 border border-slate-300 rounded text-sm bg-white"
-        >
+        <label :class="labelClass">Format</label>
+        <select v-model="format" :class="selectClass">
           <option value="all">all (json+srt+vtt+txt)</option>
           <option value="json">json</option>
           <option value="srt">srt</option>
@@ -136,41 +125,24 @@ async function submit() {
         </select>
       </div>
       <div>
-        <label class="block text-xs font-medium text-slate-700 mb-1">
-          Priority
-        </label>
+        <label :class="labelClass">Priority</label>
         <input
           v-model.number="priority"
           type="number"
           min="0"
           max="10"
-          class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+          :class="inputClass"
         />
       </div>
     </div>
 
-    <div v-if="error" class="text-sm text-red-600">{{ error }}</div>
+    <div v-if="error" class="text-sm text-danger-600">{{ error }}</div>
 
     <div class="flex items-center justify-end gap-2">
-      <button
-        type="button"
-        class="px-4 py-2 text-sm text-slate-600 hover:text-slate-900"
-        @click="emit('cancel')"
-      >
-        Cancel
-      </button>
-      <button
-        type="submit"
-        :disabled="submitting"
-        class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-4 py-2 rounded text-sm font-medium inline-flex items-center gap-2"
-      >
-        <Icon
-          v-if="submitting"
-          name="mdi:loading"
-          class="animate-spin"
-        />
+      <DesignButton variant="ghost" @click="emit('cancel')"> Cancel </DesignButton>
+      <DesignButton type="submit" :loading="submitting">
         {{ submitting ? "Submitting…" : "Submit" }}
-      </button>
+      </DesignButton>
     </div>
   </form>
 </template>

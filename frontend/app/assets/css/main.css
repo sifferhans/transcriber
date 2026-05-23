@@ -1,1 +1,74 @@
 @import "tailwindcss";
+
+/*
+ * Design tokens.
+ *
+ * Tailwind v4 generates utility classes from every variable in @theme:
+ *   --color-brand-600  → bg-brand-600 / text-brand-600 / border-brand-600 / ring-brand-600
+ *   --color-fg         → text-fg / bg-fg
+ *   --color-canvas     → bg-canvas
+ *   --radius-lg        → rounded-lg
+ *   --font-display     → font-display
+ *
+ * Color scales are aliased to Tailwind's built-in palette so we can swap the
+ * brand from "indigo" to something else by editing this one block; consumers
+ * use the semantic name and don't need to change.
+ */
+@theme {
+  /* Brand */
+  --color-brand-50: var(--color-indigo-50);
+  --color-brand-100: var(--color-indigo-100);
+  --color-brand-200: var(--color-indigo-200);
+  --color-brand-500: var(--color-indigo-500);
+  --color-brand-600: var(--color-indigo-600);
+  --color-brand-700: var(--color-indigo-700);
+
+  /* Status tones */
+  --color-success-50: var(--color-emerald-50);
+  --color-success-100: var(--color-emerald-100);
+  --color-success-200: var(--color-emerald-200);
+  --color-success-500: var(--color-emerald-500);
+  --color-success-700: var(--color-emerald-700);
+
+  --color-warning-50: var(--color-amber-50);
+  --color-warning-100: var(--color-amber-100);
+  --color-warning-200: var(--color-amber-200);
+  --color-warning-500: var(--color-amber-500);
+  --color-warning-700: var(--color-amber-700);
+
+  --color-danger-50: var(--color-red-50);
+  --color-danger-100: var(--color-red-100);
+  --color-danger-200: var(--color-red-200);
+  --color-danger-500: var(--color-red-500);
+  --color-danger-600: var(--color-red-600);
+  --color-danger-700: var(--color-red-700);
+  --color-danger-800: var(--color-red-800);
+
+  --color-info-50: var(--color-sky-50);
+  --color-info-100: var(--color-sky-100);
+  --color-info-200: var(--color-sky-200);
+  --color-info-500: var(--color-sky-500);
+  --color-info-700: var(--color-sky-700);
+
+  /* Surfaces & text */
+  --color-canvas: var(--color-slate-50); /* page background */
+  --color-surface: #ffffff; /* cards, panels */
+  --color-line: var(--color-slate-200); /* default border */
+  --color-line-strong: var(--color-slate-300); /* hovered/focused border */
+
+  --color-fg: var(--color-slate-900); /* primary text */
+  --color-fg-muted: var(--color-slate-600); /* secondary text */
+  --color-muted: var(--color-slate-500); /* placeholders, captions */
+
+  /* Radii */
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+
+  /* Fonts */
+  --font-display:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", Menlo, Monaco, "Cascadia Code", monospace;
+}

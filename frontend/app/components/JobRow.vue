@@ -28,23 +28,23 @@ async function onCancel(e: Event) {
 <template>
   <NuxtLink
     :to="`/jobs/${job.id}`"
-    class="block bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:shadow-sm transition px-4 py-3"
+    class="block bg-surface border border-line hover:border-line-strong hover:shadow-sm rounded-lg transition px-4 py-3"
   >
     <div class="flex items-center gap-4">
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 mb-1">
           <JobStatusBadge :status="job.status" />
-          <span class="text-xs text-slate-500 font-mono">{{
+          <span class="text-xs text-muted font-mono">{{
             job.id.slice(0, 8)
           }}</span>
-          <span class="text-xs text-slate-400">·</span>
-          <span class="text-xs text-slate-600">{{ job.model || "—" }}</span>
+          <span class="text-xs text-line-strong">·</span>
+          <span class="text-xs text-fg-muted">{{ job.model || "—" }}</span>
           <template v-if="job.language">
-            <span class="text-xs text-slate-400">·</span>
-            <span class="text-xs text-slate-600">{{ job.language }}</span>
+            <span class="text-xs text-line-strong">·</span>
+            <span class="text-xs text-fg-muted">{{ job.language }}</span>
           </template>
         </div>
-        <div class="text-sm text-slate-700 truncate font-mono">
+        <div class="text-sm text-fg truncate font-mono">
           {{ job.path }}
         </div>
       </div>
@@ -57,20 +57,22 @@ async function onCancel(e: Event) {
         />
         <span
           v-else-if="job.status === 'COMPLETED' && job.duration"
-          class="text-xs text-slate-500"
+          class="text-xs text-muted"
         >
           {{ job.duration }}
         </span>
-        <button
+        <DesignButton
           v-if="canCancel"
-          type="button"
-          :disabled="canceling"
-          class="text-slate-400 hover:text-red-600 disabled:opacity-50"
-          :title="'Cancel job'"
+          variant="ghost"
+          size="icon"
+          :loading="canceling"
+          title="Cancel job"
+          aria-label="Cancel job"
+          class="text-muted hover:text-danger-600!"
           @click="onCancel"
         >
-          <Icon name="mdi:close-circle-outline" size="20" />
-        </button>
+          <Icon v-if="!canceling" name="tabler:circle-x" size="20" />
+        </DesignButton>
       </div>
     </div>
   </NuxtLink>

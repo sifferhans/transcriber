@@ -7,8 +7,7 @@ const api = useApi();
 const canceling = ref(false);
 
 const canCancel = computed(
-  () =>
-    job.value?.status === "PENDING" || job.value?.status === "RUNNING",
+  () => job.value?.status === "PENDING" || job.value?.status === "RUNNING",
 );
 
 async function onCancel() {
@@ -26,42 +25,45 @@ async function onCancel() {
   <div>
     <NuxtLink
       to="/"
-      class="text-sm text-indigo-600 hover:underline inline-flex items-center gap-1 mb-4"
+      class="text-sm text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-1 mb-4"
     >
-      <Icon name="mdi:arrow-left" /> Back to jobs
+      <Icon name="tabler:arrow-left" /> Back to jobs
     </NuxtLink>
 
     <div
       v-if="error"
-      class="bg-red-50 text-red-800 border border-red-200 rounded px-4 py-3 text-sm"
+      class="bg-danger-50 text-danger-800 border border-danger-200 rounded-md px-4 py-3 text-sm"
     >
       {{ error }}
     </div>
 
-    <div v-else-if="!job && loading" class="text-slate-500">Loading…</div>
+    <div v-else-if="!job && loading" class="text-muted">Loading…</div>
 
     <div
       v-else-if="job"
-      class="bg-white border border-slate-200 rounded-lg p-6 space-y-6"
+      class="bg-surface border border-line rounded-lg p-6 space-y-6"
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <JobStatusBadge :status="job.status" />
-          <span class="font-mono text-sm text-slate-500">{{ job.id }}</span>
+          <span class="font-mono text-sm text-muted">{{ job.id }}</span>
         </div>
-        <button
+        <DesignButton
           v-if="canCancel"
-          type="button"
-          :disabled="canceling"
-          class="text-sm text-red-600 hover:text-red-700 disabled:opacity-50 inline-flex items-center gap-1"
+          variant="danger"
+          size="sm"
+          :loading="canceling"
           @click="onCancel"
         >
-          <Icon name="mdi:close-circle-outline" /> Cancel
-        </button>
+          <Icon v-if="!canceling" name="tabler:circle-x" />
+          Cancel
+        </DesignButton>
       </div>
 
       <div v-if="job.status === 'RUNNING'">
-        <div class="flex items-center justify-between mb-1 text-xs text-slate-500">
+        <div
+          class="flex items-center justify-between mb-1 text-xs text-fg-muted"
+        >
           <span>Progress</span>
           <span>{{ job.progress }}%</span>
         </div>
@@ -79,19 +81,20 @@ async function onCancel() {
         <Detail label="Callback">{{ job.callback || "—" }}</Detail>
       </dl>
 
-      <div v-if="job.result" class="border-t border-slate-200 pt-4">
+      <div v-if="job.result" class="border-t border-line pt-4">
         <Detail label="Result">{{ job.result }}</Detail>
       </div>
 
-      <div v-if="job.error" class="border-t border-slate-200 pt-4">
+      <div v-if="job.error" class="border-t border-line pt-4">
         <div
-          class="text-xs font-medium text-red-700 uppercase tracking-wider mb-1"
+          class="text-xs font-medium text-danger-700 uppercase tracking-wider mb-1"
         >
           Error
         </div>
         <pre
-          class="text-sm text-red-800 bg-red-50 p-3 rounded font-mono overflow-x-auto whitespace-pre-wrap"
-        >{{ job.error }}</pre>
+          class="text-sm text-danger-800 bg-danger-50 p-3 rounded-md font-mono overflow-x-auto whitespace-pre-wrap"
+          >{{ job.error }}</pre
+        >
       </div>
     </div>
   </div>

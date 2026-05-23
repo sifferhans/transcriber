@@ -17,7 +17,7 @@
     "vue-router": "^5.0.7"
   },
   "devDependencies": {
-    "@iconify-json/mdi": "^1.2.3",
+    "@iconify-json/tabler": "^1.2.35",
     "@tailwindcss/vite": "^4.3.0",
     "tailwindcss": "^4.3.0"
   }
