@@ -17,6 +17,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
+      title: "Transcriber",
       htmlAttrs: {
         "data-theme": "dark",
       },
