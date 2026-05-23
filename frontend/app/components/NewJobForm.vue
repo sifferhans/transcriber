@@ -17,17 +17,32 @@ const submitting = ref(false);
 const error = ref<string | null>(null);
 
 const LANGS = [
-  { v: "auto", l: "auto-detect" },
-  { v: "en", l: "English" },
-  { v: "no", l: "Norwegian" },
-  { v: "de", l: "German" },
-  { v: "es", l: "Spanish" },
-  { v: "fr", l: "French" },
-  { v: "it", l: "Italian" },
-  { v: "pt", l: "Portuguese" },
-  { v: "nl", l: "Dutch" },
-  { v: "sv", l: "Swedish" },
+  { value: "auto", label: "auto-detect" },
+  { value: "en", label: "English" },
+  { value: "no", label: "Norwegian" },
+  { value: "de", label: "German" },
+  { value: "es", label: "Spanish" },
+  { value: "fr", label: "French" },
+  { value: "it", label: "Italian" },
+  { value: "pt", label: "Portuguese" },
+  { value: "nl", label: "Dutch" },
+  { value: "sv", label: "Swedish" },
 ];
+
+const FORMATS = [
+  { value: "all", label: "all (json+srt+vtt+txt)" },
+  { value: "json", label: "json" },
+  { value: "srt", label: "srt" },
+  { value: "vtt", label: "vtt" },
+  { value: "txt", label: "txt" },
+];
+
+const modelOptions = computed(() =>
+  models.value.map((m) => ({
+    value: m.id,
+    label: m.name + (m.default ? " · default" : ""),
+  })),
+);
 
 onMounted(async () => {
   try {
@@ -63,12 +78,6 @@ async function submit() {
     submitting.value = false;
   }
 }
-
-const inputClass =
-  "w-full px-3 py-2 border border-border-1 rounded-md text-body-3 font-mono bg-surface-default text-text-default placeholder:text-text-hint";
-const selectClass =
-  "w-full px-3 py-2 border border-border-1 rounded-md text-body-3 bg-surface-default text-text-default";
-const labelClass = "block text-caption-1 text-text-default mb-1";
 </script>
 
 <template>
@@ -79,68 +88,65 @@ const labelClass = "block text-caption-1 text-text-default mb-1";
     <h2 class="text-title-1 text-text-default">New transcription job</h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label :class="labelClass">Audio file path</label>
-        <input
-          v-model="path"
-          required
-          placeholder="/mnt/storage/audio/foo.wav"
-          :class="inputClass"
-        />
-      </div>
-      <div>
-        <label :class="labelClass">Output directory</label>
-        <input
-          v-model="outputPath"
-          required
-          placeholder="/mnt/storage/out/foo/"
-          :class="inputClass"
-        />
-      </div>
-      <div>
-        <label :class="labelClass">Model</label>
-        <select v-model="model" :class="selectClass">
-          <option value="">(server default)</option>
-          <option v-for="m in models" :key="m.id" :value="m.id">
-            {{ m.name }}{{ m.default ? " · default" : "" }}
-          </option>
-        </select>
-      </div>
-      <div>
-        <label :class="labelClass">Language</label>
-        <select v-model="language" :class="selectClass">
-          <option v-for="l in LANGS" :key="l.v" :value="l.v">{{ l.l }}</option>
-        </select>
-      </div>
-      <div>
-        <label :class="labelClass">Format</label>
-        <select v-model="format" :class="selectClass">
-          <option value="all">all (json+srt+vtt+txt)</option>
-          <option value="json">json</option>
-          <option value="srt">srt</option>
-          <option value="vtt">vtt</option>
-          <option value="txt">txt</option>
-        </select>
-      </div>
-      <div>
-        <label :class="labelClass">Priority</label>
-        <input
-          v-model.number="priority"
-          type="number"
-          min="0"
-          max="10"
-          :class="inputClass"
-        />
-      </div>
+      <DesignInput
+        v-model="path"
+        label="Audio file path"
+        placeholder="/mnt/storage/audio/foo.wav"
+        required
+        monospace
+      />
+      <DesignInput
+        v-model="outputPath"
+        label="Output directory"
+        placeholder="/mnt/storage/out/foo/"
+        required
+        monospace
+      />
+      <DesignInput
+        v-model="model"
+        type="select"
+        label="Model"
+        prompt="(server default)"
+        :options="modelOptions"
+      />
+      <DesignInput
+        v-model="language"
+        type="select"
+        label="Language"
+        :options="LANGS"
+      />
+      <DesignInput
+        v-model="format"
+        type="select"
+        label="Format"
+        :options="FORMATS"
+      />
+      <DesignInput
+        v-model.number="priority"
+        type="number"
+        label="Priority"
+        :min="0"
+        :max="10"
+      />
     </div>
 
-    <div v-if="error" class="text-body-3 text-semantic-error">{{ error }}</div>
+    <DesignBanner v-if="error" variant="error" icon="tabler:alert-circle">
+      {{ error }}
+    </DesignBanner>
 
     <div class="flex items-center justify-end gap-2">
-      <DesignButton variant="ghost" @click="emit('cancel')"> Cancel </DesignButton>
-      <DesignButton type="submit" :loading="submitting">
-        {{ submitting ? "Submitting…" : "Submit" }}
-      </DesignButton>
+      <DesignButton
+        variant="tertiary"
+        size="small"
+        label="Cancel"
+        @click="emit('cancel')"
+      />
+      <DesignButton
+        type="submit"
+        size="small"
+        :loading="submitting"
+        :label="submitting ? 'Submitting…' : 'Submit'"
+      />
     </div>
   </form>
 </template>

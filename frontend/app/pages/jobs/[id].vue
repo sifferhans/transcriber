@@ -23,21 +23,20 @@ async function onCancel() {
 
 <template>
   <div>
-    <NuxtLink
+    <DesignButton
       to="/"
-      class="text-body-3 text-primary-default hover:text-primary-contrast hover:underline inline-flex items-center gap-1 mb-4"
-    >
-      <Icon name="tabler:arrow-left" /> Back to jobs
-    </NuxtLink>
+      variant="tertiary"
+      size="small"
+      icon="tabler:arrow-left"
+      label="Back to jobs"
+      class="mb-4"
+    />
 
-    <div
-      v-if="error"
-      class="bg-semantic-error/10 text-semantic-error ring-1 ring-semantic-error/30 rounded-md px-4 py-3 text-body-3"
-    >
+    <DesignBanner v-if="error" variant="error" icon="tabler:alert-circle">
       {{ error }}
-    </div>
+    </DesignBanner>
 
-    <div v-else-if="!job && loading" class="text-text-hint">Loading…</div>
+    <DesignLoadingState v-else-if="!job && loading" :size="32" />
 
     <div
       v-else-if="job"
@@ -51,13 +50,12 @@ async function onCancel() {
         <DesignButton
           v-if="canCancel"
           variant="danger"
-          size="sm"
+          size="small"
+          icon="tabler:circle-x"
+          label="Cancel"
           :loading="canceling"
           @click="onCancel"
-        >
-          <Icon v-if="!canceling" name="tabler:circle-x" />
-          Cancel
-        </DesignButton>
+        />
       </div>
 
       <div v-if="job.status === 'RUNNING'">
@@ -85,17 +83,13 @@ async function onCancel() {
         <Detail label="Result">{{ job.result }}</Detail>
       </div>
 
-      <div v-if="job.error" class="border-t border-border-1 pt-4">
-        <div
-          class="text-caption-2 text-semantic-error uppercase tracking-wider mb-1"
-        >
-          Error
-        </div>
-        <pre
-          class="text-body-3 text-semantic-error bg-semantic-error/10 p-3 rounded-md font-mono overflow-x-auto whitespace-pre-wrap"
-          >{{ job.error }}</pre
-        >
-      </div>
+      <DesignBanner
+        v-if="job.error"
+        variant="error"
+        icon="tabler:alert-circle"
+      >
+        <span class="font-mono">{{ job.error }}</span>
+      </DesignBanner>
     </div>
   </div>
 </template>

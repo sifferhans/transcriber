@@ -1,72 +1,69 @@
 <script setup lang="ts">
-// DesignButton is the primary button primitive of the design system.
-// Tokens (primary-default / on-primary / surface-* / text-*) ensure variants
-// stay coherent across light and dark themes.
+// Mirrors Phoenix's CoreComponents.button/1.
 //
-// Focus styling is handled globally by main.css (the :where() rule); we do
-// not set per-component focus rings.
+// When `to` is provided we render NuxtLink so client-side routing kicks in;
+// otherwise a native <button>. `danger` is added as a 4th variant since the
+// app needs destructive actions and dressing them as `tertiary` would be
+// confusing next to the semantic-error treatment elsewhere.
 
-type Variant = "primary" | "secondary" | "ghost" | "danger" | "link";
-type Size = "sm" | "md" | "lg" | "icon";
+type Variant = "primary" | "secondary" | "tertiary" | "danger";
+type Size = "small" | "medium" | "large";
 
 withDefaults(
   defineProps<{
     variant?: Variant;
     size?: Size;
-    type?: "button" | "submit" | "reset";
-    disabled?: boolean;
+    label?: string;
+    icon?: string;
     loading?: boolean;
+    disabled?: boolean;
     block?: boolean;
+    to?: string;
+    type?: "button" | "submit" | "reset";
   }>(),
   {
     variant: "primary",
-    size: "md",
+    size: "medium",
     type: "button",
-    disabled: false,
     loading: false,
+    disabled: false,
     block: false,
   },
 );
 
 const variants: Record<Variant, string> = {
-  primary:
-    "bg-primary-default hover:bg-primary-contrast text-on-primary shadow-resting",
-  secondary:
-    "bg-surface-raise hover:bg-surface-indent text-text-default border border-border-1",
-  ghost:
-    "bg-transparent hover:bg-surface-indent text-text-muted hover:text-text-default",
-  danger:
-    "bg-semantic-error hover:bg-semantic-error/90 text-white shadow-resting",
-  link:
-    "bg-transparent text-primary-default hover:text-primary-contrast hover:underline px-0!",
+  primary: "bg-primary-default text-on-primary gradient-border-dark",
+  secondary: "bg-surface-indent text-text-default",
+  tertiary: "bg-transparent text-text-default hover:bg-surface-indent",
+  danger: "bg-semantic-error text-text-light-default gradient-border-dark",
 };
 
 const sizes: Record<Size, string> = {
-  sm: "px-2.5 py-1 text-caption-1 gap-1 rounded-sm",
-  md: "px-4 py-2 text-title-3 gap-2 rounded-md",
-  lg: "px-5 py-2.5 text-title-2 gap-2 rounded-md",
-  icon: "p-1.5 text-title-3 rounded-md",
+  small: "rounded-2xl px-3 py-1.5 text-title-3 gap-1",
+  medium: "rounded-3xl px-4 py-2.5 text-title-2 gap-2",
+  large: "rounded-4xl px-5 py-3.5 text-title-2 gap-2",
 };
+
+const base = [
+  "inline-flex items-center justify-center select-none cursor-pointer",
+  "transition-transform duration-200 ease-out-expo active:scale-95",
+  "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
+];
 </script>
 
 <template>
-  <button
-    :type="type"
-    :disabled="disabled || loading"
-    :class="[
-      'inline-flex items-center justify-center transition-colors',
-      'disabled:opacity-50 disabled:cursor-not-allowed',
-      variants[variant],
-      sizes[size],
-      block && 'w-full',
-    ]"
+  <component
+    :is="to ? 'NuxtLink' : 'button'"
+    :to="to"
+    :type="to ? undefined : type"
+    :disabled="to ? undefined : disabled || loading"
+    :class="[base, variants[variant], sizes[size], block && 'w-full']"
   >
-    <!-- SVG spinner uses the spinner-rotate / spinner-segment utilities. -->
     <svg
       v-if="loading"
       class="spinner-rotate"
-      :width="size === 'sm' ? 12 : 14"
-      :height="size === 'sm' ? 12 : 14"
+      :width="size === 'small' ? 14 : 16"
+      :height="size === 'small' ? 14 : 16"
       viewBox="0 0 24 24"
       aria-hidden="true"
     >
@@ -81,6 +78,13 @@ const sizes: Record<Size, string> = {
         stroke-linecap="round"
       />
     </svg>
-    <slot />
-  </button>
+    <Icon
+      v-else-if="icon"
+      :name="icon"
+      :size="size === 'small' ? '14' : '16'"
+    />
+    <span v-if="$slots.default || label">
+      <slot>{{ label }}</slot>
+    </span>
+  </component>
 </template>

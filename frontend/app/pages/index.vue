@@ -12,22 +12,21 @@ async function onCreated(_job: TranscribeJob) {
 
 <template>
   <div>
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h1 class="text-heading-2 text-text-default">Transcription jobs</h1>
-        <p class="text-body-3 text-text-muted mt-1">
-          {{ jobs.length }} total
-          <span v-if="loading" class="ml-2 text-text-hint">refreshing…</span>
-        </p>
-      </div>
-      <DesignButton
-        :variant="showForm ? 'secondary' : 'primary'"
-        @click="showForm = !showForm"
-      >
-        <Icon :name="showForm ? 'tabler:x' : 'tabler:plus'" />
-        {{ showForm ? "Close" : "New job" }}
-      </DesignButton>
-    </div>
+    <DesignHeader>
+      Transcription jobs
+      <template #subtitle>
+        {{ jobs.length }} total
+        <span v-if="loading" class="ml-2 text-text-hint">refreshing…</span>
+      </template>
+      <template #actions>
+        <DesignButton
+          :variant="showForm ? 'secondary' : 'primary'"
+          :icon="showForm ? 'tabler:x' : 'tabler:plus'"
+          :label="showForm ? 'Close' : 'New job'"
+          @click="showForm = !showForm"
+        />
+      </template>
+    </DesignHeader>
 
     <NewJobForm
       v-if="showForm"
@@ -36,24 +35,22 @@ async function onCreated(_job: TranscribeJob) {
       @cancel="showForm = false"
     />
 
-    <div
+    <DesignBanner
       v-if="error"
-      class="bg-semantic-error/10 text-semantic-error ring-1 ring-semantic-error/30 rounded-md px-4 py-3 mb-4 text-body-3"
+      variant="error"
+      icon="tabler:alert-circle"
+      class="mb-4"
     >
       {{ error }}
-    </div>
+    </DesignBanner>
 
-    <div
+    <DesignEmptyState
       v-if="!jobs.length && !loading"
-      class="text-center py-16 text-text-muted border border-dashed border-border-1 rounded-lg"
-    >
-      <Icon
-        name="tabler:wave-saw-tool"
-        size="32"
-        class="mx-auto mb-2 text-text-hint"
-      />
-      <p>No jobs yet. Click "New job" to start one.</p>
-    </div>
+      icon="tabler:wave-saw-tool"
+      title="No jobs yet"
+      description="Click “New job” to start a transcription."
+      class="py-16"
+    />
 
     <div v-else class="space-y-2">
       <JobRow v-for="j in jobs" :key="j.id" :job="j" @cancel="fetchOnce" />

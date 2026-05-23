@@ -3,22 +3,17 @@ import type { JobStatus } from "~/types/job";
 
 defineProps<{ status: JobStatus }>();
 
-type Tone = "neutral" | "brand" | "success" | "warning" | "danger" | "info";
+type Variant = "neutral" | "success" | "warning" | "info" | "error";
 
-const tones: Record<JobStatus, Tone> = {
+const variants: Record<JobStatus, Variant> = {
   PENDING: "neutral",
-  RUNNING: "brand",
+  RUNNING: "info",
   COMPLETED: "success",
-  FAILED: "danger",
+  FAILED: "error",
   CANCELED: "warning",
 };
 </script>
 
 <template>
-  <DesignBadge
-    :tone="tones[status]"
-    :dot="status === 'PENDING' || status === 'RUNNING'"
-  >
-    {{ status.toLowerCase() }}
-  </DesignBadge>
+  <DesignBadge :variant="variants[status]" :label="status.toLowerCase()" />
 </template>

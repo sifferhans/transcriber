@@ -1,14 +1,14 @@
 <script setup lang="ts">
-// Mirrors Phoenix's CoreComponents.badge/1.
-// Single hue per variant; tinted backgrounds via /15 opacity modifier.
+// Mirrors Phoenix's CoreComponents.banner/1.
+// Full-width tinted notice. Use for inline (in-flow) messaging; for transient
+// toast-style notifications use DesignFlash.
 
 type Variant = "neutral" | "success" | "warning" | "info" | "error";
 
 withDefaults(
   defineProps<{
     variant?: Variant;
-    label?: string;
-    class?: string;
+    icon?: string;
   }>(),
   { variant: "neutral" },
 );
@@ -23,12 +23,15 @@ const variants: Record<Variant, string> = {
 </script>
 
 <template>
-  <span
+  <div
     :class="[
-      'inline-flex items-center rounded-lg px-2 py-0.5 text-caption-1',
+      'flex items-center gap-3 rounded-xl px-4 py-3 text-body-3',
       variants[variant],
     ]"
   >
-    <slot>{{ label }}</slot>
-  </span>
+    <Icon v-if="icon" :name="icon" size="20" class="shrink-0" />
+    <div class="flex-1">
+      <slot />
+    </div>
+  </div>
 </template>

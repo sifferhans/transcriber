@@ -111,6 +111,9 @@
   --text-caption-2--font-weight: 500;
   --text-caption-2--letter-spacing: -0.04px;
 
+  /* Radii — extend Tailwind defaults with --radius-4xl for large pill buttons. */
+  --radius-4xl: 2rem;
+
   /* Easing */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -200,6 +203,47 @@
   ):focus-visible {
     outline: 2px solid var(--color-focus-ring);
     outline-offset: 2px;
+  }
+}
+
+/* Subtle 1px gradient border drawn via a pseudo-element. Use on a parent
+   element that already has a background; --gradient-border-bg defaults to the
+   "light" highlight. Pair with gradient-border-dark for downlit chrome. */
+@utility gradient-border {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      to top,
+      rgb(255 255 255 / 0.05),
+      rgb(255 255 255 / 0.12)
+    );
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+@utility gradient-border-dark {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(to bottom, rgb(0 0 0 / 0), rgb(0 0 0 / 0.12));
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
   }
 }
 
