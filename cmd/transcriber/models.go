@@ -4,10 +4,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bcc-code/transcriber/internal/transcriber"
-	"github.com/bcc-code/transcriber/internal/transcriber/fasterwhisper"
-	"github.com/bcc-code/transcriber/internal/transcriber/stub"
-	"github.com/bcc-code/transcriber/internal/transcriber/whispercpp"
+	"transcriber/internal/transcriber"
+	"transcriber/internal/transcriber/fasterwhisper"
+	"transcriber/internal/transcriber/stub"
+	"transcriber/internal/transcriber/whispercpp"
 )
 
 // buildRegistry declares every Transcriber the server can use.

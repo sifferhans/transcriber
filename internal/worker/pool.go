@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bcc-code/transcriber/internal/callback"
-	"github.com/bcc-code/transcriber/internal/formats"
-	"github.com/bcc-code/transcriber/internal/jobs"
-	"github.com/bcc-code/transcriber/internal/transcriber"
+	"transcriber/internal/callback"
+	"transcriber/internal/formats"
+	"transcriber/internal/jobs"
+	"transcriber/internal/transcriber"
 )
 
 // Pool is a fixed-size set of worker goroutines that pull jobs from the

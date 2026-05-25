@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bcc-code/transcriber/internal/jobs"
-	"github.com/bcc-code/transcriber/internal/transcriber"
+	"transcriber/internal/jobs"
+	"transcriber/internal/transcriber"
 )
 
 type Server struct {

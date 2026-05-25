@@ -3,7 +3,7 @@ package api
 import (
 	"time"
 
-	"github.com/bcc-code/transcriber/internal/jobs"
+	"transcriber/internal/jobs"
 )
 
 // TranscribeInput matches the request body shape of the existing Python API.

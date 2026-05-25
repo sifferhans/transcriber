@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bcc-code/transcriber/internal/transcriber"
+	"transcriber/internal/transcriber"
 )
 
 // Format identifiers used in the API's `format` field.

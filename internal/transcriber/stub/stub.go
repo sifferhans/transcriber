@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/bcc-code/transcriber/internal/transcriber"
+	"transcriber/internal/transcriber"
 )
 
 type Adapter struct {

@@ -1,3 +1,3 @@
-module github.com/bcc-code/transcriber
+module transcriber
 
 go 1.26.3

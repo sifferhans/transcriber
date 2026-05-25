@@ -11,11 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/bcc-code/transcriber/internal/api"
-	"github.com/bcc-code/transcriber/internal/callback"
-	"github.com/bcc-code/transcriber/internal/jobs"
-	"github.com/bcc-code/transcriber/internal/web"
-	"github.com/bcc-code/transcriber/internal/worker"
+	"transcriber/internal/api"
+	"transcriber/internal/callback"
+	"transcriber/internal/jobs"
+	"transcriber/internal/web"
+	"transcriber/internal/worker"
 )
 
 func main() {
