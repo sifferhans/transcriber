@@ -68,7 +68,7 @@ func (a *Adapter) Transcribe(ctx context.Context, req transcriber.Request, onPro
 		"-m", a.cfg.ModelFile,
 		"-f", req.InputPath,
 		"-of", outPrefix,
-		"-oj",
+		"-ojf",
 		"-t", strconv.Itoa(a.cfg.Threads),
 		"-pp",
 	}
@@ -160,7 +160,9 @@ func (c *stderrCapture) wait() string {
 	return strings.Join(c.tail, "\n")
 }
 
-// whisper.cpp `--output-json` shape (timestamps in ms via offsets.from/to).
+// whisper.cpp `--output-json-full` shape: each transcription entry contains
+// the text plus per-token timestamps (ms via offsets.from/to). Tokens are
+// BPE pieces — words start at a token whose text begins with a space.
 type rawOutput struct {
 	Result struct {
 		Language string `json:"language"`
@@ -173,8 +175,23 @@ type rawSegment struct {
 		From int `json:"from"` // milliseconds
 		To   int `json:"to"`
 	} `json:"offsets"`
-	Text string `json:"text"`
+	Text   string     `json:"text"`
+	Tokens []rawToken `json:"tokens"`
 }
+
+type rawToken struct {
+	Text    string `json:"text"`
+	Offsets struct {
+		From int `json:"from"`
+		To   int `json:"to"`
+	} `json:"offsets"`
+	ID int     `json:"id"`
+	P  float64 `json:"p"`
+}
+
+// Whisper's vocab puts the first special token at id 50256 ([_BEG_]/<|endoftext|>);
+// anything at or above this is a control token that shouldn't appear in words.
+const firstSpecialTokenID = 50256
 
 func parseJSON(data []byte, fallbackLang string) (*transcriber.Transcription, error) {
 	var raw rawOutput
@@ -196,10 +213,60 @@ func parseJSON(data []byte, fallbackLang string) (*transcriber.Transcription, er
 			Start: float64(s.Offsets.From) / 1000.0,
 			End:   float64(s.Offsets.To) / 1000.0,
 			Text:  text,
+			Words: tokensToWords(s.Tokens),
 		})
 		sb.WriteString(text)
 		sb.WriteByte(' ')
 	}
 	t.Text = strings.TrimSpace(sb.String())
 	return t, nil
+}
+
+// tokensToWords groups BPE tokens into words. A new word begins when a
+// token's text starts with a space; subsequent tokens (sub-word pieces or
+// trailing punctuation) attach to the current word.
+func tokensToWords(tokens []rawToken) []transcriber.Word {
+	if len(tokens) == 0 {
+		return nil
+	}
+	var words []transcriber.Word
+	var cur *transcriber.Word
+	var curConfProd float64
+	var curConfN int
+	flush := func() {
+		if cur == nil {
+			return
+		}
+		cur.Text = strings.TrimSpace(cur.Text)
+		if cur.Text != "" {
+			if curConfN > 0 {
+				cur.Confidence = curConfProd / float64(curConfN)
+			}
+			words = append(words, *cur)
+		}
+		cur = nil
+		curConfProd = 0
+		curConfN = 0
+	}
+	for _, tok := range tokens {
+		if tok.ID >= firstSpecialTokenID {
+			continue
+		}
+		startsWord := cur == nil || strings.HasPrefix(tok.Text, " ")
+		if startsWord {
+			flush()
+			start := float64(tok.Offsets.From) / 1000.0
+			end := float64(tok.Offsets.To) / 1000.0
+			cur = &transcriber.Word{Text: tok.Text, Start: start, End: end}
+		} else {
+			cur.Text += tok.Text
+			if end := float64(tok.Offsets.To) / 1000.0; end > cur.End {
+				cur.End = end
+			}
+		}
+		curConfProd += tok.P
+		curConfN++
+	}
+	flush()
+	return words
 }
