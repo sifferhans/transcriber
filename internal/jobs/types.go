@@ -2,8 +2,7 @@ package jobs
 
 import "time"
 
-// Status constants kept uppercase to match the existing Python API contract
-// consumed by callers like the Temporal transcription activity.
+// Status constants kept uppercase to match the existing Python API contract.
 const (
 	StatusPending   = "QUEUED"
 	StatusRunning   = "RUNNING"

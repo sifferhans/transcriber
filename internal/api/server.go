@@ -29,7 +29,7 @@ func (s *Server) Routes(staticHandler http.Handler) http.Handler {
 	// Drop-in compatible endpoints (match the existing Python API).
 	mux.HandleFunc("POST /transcription/job", s.createJob)
 	mux.HandleFunc("GET /transcription/job/{id}", s.getJob)
-	// Additive endpoints — do not break existing callers.
+	// Additive endpoints — do not break the legacy API contract.
 	mux.HandleFunc("DELETE /transcription/job/{id}", s.cancelJob)
 	mux.HandleFunc("GET /transcription/jobs", s.listJobs)
 	mux.HandleFunc("GET /models", s.listModels)
@@ -148,7 +148,7 @@ func (s *Server) listModels(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
-// stats mirrors the old ai-api `GET /stats` response shape:
+// stats mirrors the legacy API's `GET /stats` response shape:
 // `{Queued, Running, Processed}` with capitalized JSON keys. "Processed"
 // counts every terminal job (COMPLETED, FAILED, CANCELED), matching the
 // legacy semantics of "has been through the worker".

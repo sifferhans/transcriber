@@ -8,8 +8,8 @@ chunking work for long-form audio is already in `internal/transcriber/chunked`.
 
 `internal/jobs.Store` is in-memory: a server restart loses the queue and all
 history. For an API behind a pipeline this is unacceptable — retries can't
-deduplicate, callers can't query status across restarts, and a crash mid-job
-silently drops work.
+deduplicate, the caller can't query status across restarts, and a crash
+mid-job silently drops work.
 
 Approach: drop in SQLite via `modernc.org/sqlite` (pure Go, no CGO). The
 existing `Store` interface fits a SQL backing with `jobs` + `job_events`
@@ -18,23 +18,25 @@ tables. Restore in-flight jobs on boot (mark `RUNNING`-but-unowned ones as
 
 ## Idempotency keys
 
-Pipelines retry on infra hiccups, and without deduplication the API will
-happily transcribe the same file twice. Accept `Idempotency-Key` (header or
-body field) on POST; cache the resulting job id keyed by (api-key,
-idempotency-key) for a fixed window (24h is conventional). Repeats inside
-the window return the original job's id with the original status.
+The caller retries on infra hiccups, and without deduplication the API
+will happily transcribe the same file twice. Accept `Idempotency-Key`
+(header or body field) on POST; cache the resulting job id for a fixed
+window (24h is conventional). Repeats inside the window return the
+original job's id with the original status.
 
-## Authentication + per-key rate limits
+## Network access control
 
-Currently anyone reachable on the port can submit jobs. Minimum viable:
-opaque API tokens checked at middleware, scoped per consumer; per-token
-rate limit (token bucket, e.g. 60 req/min) and concurrent-job quota. Logs
-must include the token id so abuse is traceable.
+Currently anything reachable on the port can submit jobs. With a single
+known caller, the cheap fix is network-level: bind to the internal
+interface, firewall the port, or front with a reverse proxy that
+allowlists the caller's source IPs. A shared API token checked in
+middleware is the next step up if network controls aren't enough.
 
 ## URL-based input + signed-URL output
 
-The API takes a server-local file path, which forces callers to drop files
-on the box before submitting. For a pipeline that's a step nobody wants.
+The API takes a server-local file path, which forces the caller to drop
+files on the box before submitting. For a pipeline that's a step nobody
+wants.
 
 - Input: accept `source_url` (`http(s)://` or `s3://`); download to a scratch
   dir, transcribe, clean up. Bound max size + content-type, respect signed
@@ -55,8 +57,8 @@ Use the word timestamps to split each segment cleanly:
   would exceed `max_chars_per_line`; break, add a `\n`, fill again; flush
   the cue when `max_lines_per_cue` or `max_cue_duration_ms` is reached.
 - Snap line breaks to whitespace; never split mid-word.
-- Configurable per-call (`subtitle_options` on the job) so different
-  consumers can ask for different rules.
+- A `subtitle_options` field on the job request lets the workflow tune
+  the rules per call without a server redeploy.
 
 This is the single highest-leverage output change for VOD use.
 
@@ -65,9 +67,9 @@ This is the single highest-leverage output change for VOD use.
 `internal/callback` fires on status changes but the payload isn't signed
 and is fairly bare. For pipeline integration:
 
-- Sign with HMAC-SHA256 over the raw body using a per-consumer secret;
-  include `X-Signature` + `X-Timestamp` headers and reject replays older
-  than ~5 min on the receiver side.
+- Sign with HMAC-SHA256 over the raw body using a shared secret with the
+  caller; include `X-Signature` + `X-Timestamp` headers and reject
+  replays older than ~5 min on the receiver side.
 - On `COMPLETED`, include the result inline (small) or a result URL the
   receiver can pull, plus `duration`, `language`, `model`, `word_count`.
 - Retries: exponential backoff with a dead-letter after N attempts.
@@ -76,8 +78,7 @@ and is fairly bare. For pipeline integration:
 
 API-first means a published contract. Generate `openapi.yaml` from the
 handlers (or hand-write, the surface is small) and serve it at
-`/openapi.yaml`. Use it to generate clients for the VOD service in its
-native language.
+`/openapi.yaml`. Use it to generate a typed client for the caller.
 
 ## Initial prompt / custom vocabulary
 
@@ -86,9 +87,9 @@ specific terminology. For domain content (proper nouns, theology terms in
 the church-gathering corpus, brand names, host names on a recurring
 podcast) this is a one-line CLI flag with a noticeable quality win.
 
-Add an `initial_prompt` field to the job request and forward it to both
-adapters. Per-API-key default prompts are a cheap extension that lets a
-consumer set vocabulary once and forget.
+Add an `initial_prompt` field to the job request and forward it to the
+whisper.cpp adapter. A server-side default (flag or env var) is a cheap
+extension that lets the caller stay terse on the request side.
 
 ## Forced alignment mode
 

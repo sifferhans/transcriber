@@ -3,7 +3,7 @@ package transcriber
 import "strings"
 
 // whisperSupportedLanguages mirrors the language set accepted by Whisper-family
-// models, lifted from the existing Python API client.
+// models, lifted from the legacy Python API's documented allowlist.
 var whisperSupportedLanguages = map[string]bool{
 	"en": true, "zh": true, "de": true, "es": true, "ru": true, "ko": true,
 	"fr": true, "ja": true, "pt": true, "tr": true, "pl": true, "ca": true,

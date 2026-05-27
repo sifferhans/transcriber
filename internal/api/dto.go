@@ -7,8 +7,8 @@ import (
 )
 
 // TranscribeInput matches the request body shape of the existing Python API.
-// `Model` is an additive optional field — existing clients that omit it get
-// the server's default.
+// `Model` is an additive optional field — requests that omit it get the
+// server's default.
 type TranscribeInput struct {
 	Path       string `json:"path"`
 	Language   string `json:"language"`
@@ -19,9 +19,8 @@ type TranscribeInput struct {
 	Model      string `json:"model,omitempty"`
 }
 
-// TranscribeJob mirrors the response shape of the existing Python API so
-// existing callers (e.g. the Temporal activity that drives transcription)
-// can talk to this server unchanged.
+// TranscribeJob mirrors the response shape of the existing Python API
+// so a caller can swap one server for the other unchanged.
 type TranscribeJob struct {
 	ID           string `json:"id"`
 	Path         string `json:"path"`

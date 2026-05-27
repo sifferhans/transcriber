@@ -15,8 +15,8 @@ import (
 //
 // To add a new model: import its adapter package and append another
 // Register call. Multiple variants of the same backend live as separate
-// entries with distinct IDs so callers can pick per request via the
-// `model` field.
+// entries with distinct IDs so a job request can pick between them via
+// the `model` field.
 //
 // Model files are fetched from Hugging Face on first use and cached on
 // disk via internal/hfcache. The matching `*_MODEL` env vars still work
@@ -61,7 +61,7 @@ func buildRegistry(defaultID string) *transcriber.Registry {
 		chunked.Config{},
 	))
 
-	// Drop-in aliases for the legacy ai-api allowlist. Sub-large sizes
+	// Drop-in aliases for the legacy Python API's allowlist. Sub-large sizes
 	// upgrade to the large model — faithful to the old runner's behavior
 	// of silently coercing anything outside its allowlist to large.
 	r.Alias("openai/whisper-large-v3", "whisper-cpp-large-v3")

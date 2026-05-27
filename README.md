@@ -146,7 +146,7 @@ serialize to.
 1. Implement `transcriber.Transcriber` in `internal/transcriber/<name>/`.
 2. Add another `r.Register(...)` call in `cmd/transcriber/models.go` with
    the adapter's typed `Config`. Use a distinct ID per variant
-   (e.g. `whisper-cpp-large-v3`, `whisper-cpp-medium`) so callers can A/B
+   (e.g. `whisper-cpp-large-v3`, `whisper-cpp-medium`) so you can A/B
    test by passing `"model": "..."` in the request body.
 3. Wrap the adapter in `chunked.New(inner, chunked.Config{})` at
    registration time if it should handle long-form audio — the wrapper
