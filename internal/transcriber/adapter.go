@@ -28,10 +28,9 @@ type Segment struct {
 }
 
 type Word struct {
-	Text       string  `json:"text"`
-	Start      float64 `json:"start"`
-	End        float64 `json:"end"`
-	Confidence float64 `json:"confidence,omitempty"`
+	Text  string  `json:"text"`
+	Start float64 `json:"start"`
+	End   float64 `json:"end"`
 }
 
 type Request struct {

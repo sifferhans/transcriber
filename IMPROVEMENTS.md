@@ -34,13 +34,3 @@ Caveats:
 
 Worth doing if word timing drives UX (karaoke highlighting, click-to-seek on
 a word). Skippable if word timestamps are just metadata.
-
-## Per-word confidence field
-
-The whisper.cpp adapter now emits a `confidence` value per word (mean of the
-contributing tokens' `p`). The reference format in `test/formats/transcript.json`
-doesn't include this field — it's currently kept because it's free information
-that downstream consumers may find useful, and the field is `omitempty` so
-zero-confidence words drop it cleanly. If it turns out to be noise, remove the
-`Confidence` field from `transcriber.Word` and stop populating it in
-`tokensToWords`.

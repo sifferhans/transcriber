@@ -185,8 +185,7 @@ type rawToken struct {
 		From int `json:"from"`
 		To   int `json:"to"`
 	} `json:"offsets"`
-	ID int     `json:"id"`
-	P  float64 `json:"p"`
+	ID int `json:"id"`
 }
 
 // Whisper's vocab puts the first special token at id 50256 ([_BEG_]/<|endoftext|>);
@@ -231,22 +230,15 @@ func tokensToWords(tokens []rawToken) []transcriber.Word {
 	}
 	var words []transcriber.Word
 	var cur *transcriber.Word
-	var curConfProd float64
-	var curConfN int
 	flush := func() {
 		if cur == nil {
 			return
 		}
 		cur.Text = strings.TrimSpace(cur.Text)
 		if cur.Text != "" {
-			if curConfN > 0 {
-				cur.Confidence = curConfProd / float64(curConfN)
-			}
 			words = append(words, *cur)
 		}
 		cur = nil
-		curConfProd = 0
-		curConfN = 0
 	}
 	for _, tok := range tokens {
 		if tok.ID >= firstSpecialTokenID {
@@ -264,8 +256,6 @@ func tokensToWords(tokens []rawToken) []transcriber.Word {
 				cur.End = end
 			}
 		}
-		curConfProd += tok.P
-		curConfN++
 	}
 	flush()
 	return words

@@ -172,10 +172,9 @@ func parseJSON(data []byte) (*transcriber.Transcription, error) {
 		}
 		for _, w := range s.Words {
 			seg.Words = append(seg.Words, transcriber.Word{
-				Text:       w.Word,
-				Start:      w.Start,
-				End:        w.End,
-				Confidence: w.Probability,
+				Text:  w.Word,
+				Start: w.Start,
+				End:   w.End,
 			})
 		}
 		t.Segments = append(t.Segments, seg)
