@@ -16,6 +16,7 @@ export interface TranscribeJob {
   result: string;
   callback: string;
   model: string;
+  prompt?: string;
   duration: string;
   priority: number;
   error?: string;
@@ -29,6 +30,7 @@ export interface TranscribeInput {
   callback?: string;
   priority?: number;
   model?: string;
+  prompt?: string;
 }
 
 export interface ModelInfo {

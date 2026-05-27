@@ -14,6 +14,7 @@ type TranscribeInput struct {
 	OutputPath string `json:"output_path"`
 	Priority   int    `json:"priority,omitempty"`
 	Model      string `json:"model,omitempty"`
+	Prompt     string `json:"prompt,omitempty"`
 }
 
 type TranscribeJob struct {
@@ -27,6 +28,7 @@ type TranscribeJob struct {
 	Result       string `json:"result"`
 	Callback     string `json:"callback"`
 	Model        string `json:"model"`
+	Prompt       string `json:"prompt,omitempty"`
 	Duration     string `json:"duration"`
 	Priority     int    `json:"priority"`
 	Error        string `json:"error,omitempty"`
@@ -44,6 +46,7 @@ func ToDTO(j jobs.Job) TranscribeJob {
 		Result:       j.Result,
 		Callback:     j.Callback,
 		Model:        j.Model,
+		Prompt:       j.Prompt,
 		Duration:     formatDuration(j.Duration),
 		Priority:     j.Priority,
 		Error:        j.Error,

@@ -117,6 +117,7 @@ func (a *Adapter) transcribeChunk(ctx context.Context, req transcriber.Request, 
 		InputPath: wavPath,
 		Language:  req.Language,
 		OutputDir: chunkOutDir,
+		Prompt:    req.Prompt,
 		Options:   req.Options,
 	}
 	res, err := a.Inner.Transcribe(ctx, subReq, onProgress)

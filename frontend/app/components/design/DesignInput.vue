@@ -30,6 +30,7 @@ const props = withDefaults(
         disabled?: boolean;
         min?: number | string;
         max?: number | string;
+        maxlength?: number;
         rows?: number;
         options?: Option[];
         prompt?: string;
@@ -98,6 +99,7 @@ const fieldClass = (hasError: boolean) => [
                 :required="required"
                 :disabled="disabled"
                 :rows="rows ?? 3"
+                :maxlength="maxlength"
                 :class="fieldClass(errors.length > 0)"
             />
 
@@ -110,6 +112,7 @@ const fieldClass = (hasError: boolean) => [
                 :disabled="disabled"
                 :min="min"
                 :max="max"
+                :maxlength="maxlength"
                 :class="fieldClass(errors.length > 0)"
             />
         </label>

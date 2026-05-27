@@ -79,6 +79,7 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 		Priority:   in.Priority,
 		Callback:   in.Callback,
 		Model:      model,
+		Prompt:     in.Prompt,
 		Status:     jobs.StatusPending,
 		CreatedAt:  now,
 	}

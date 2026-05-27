@@ -87,6 +87,9 @@ func (a *Adapter) Transcribe(ctx context.Context, req transcriber.Request, onPro
 	if req.Language != "" && req.Language != "auto" {
 		args = append(args, "--language", req.Language)
 	}
+	if req.Prompt != "" {
+		args = append(args, "--prompt", req.Prompt)
+	}
 
 	start := time.Now()
 	cmd := exec.CommandContext(ctx, a.cfg.Binary, args...)

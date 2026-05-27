@@ -110,6 +110,7 @@ func (p *Pool) runJob(parent context.Context, id string, log *slog.Logger) {
 		InputPath: job.Path,
 		Language:  job.Language,
 		OutputDir: job.OutputPath,
+		Prompt:    job.Prompt,
 	}
 
 	res, err := adapter.Transcribe(ctx, req, onProgress)

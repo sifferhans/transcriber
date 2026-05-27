@@ -82,6 +82,10 @@ async function onCancel() {
                 <Detail label="Callback">{{ job.callback || "—" }}</Detail>
             </dl>
 
+            <div v-if="job.prompt" class="border-t border-border-1 pt-4">
+                <Detail label="Vocabulary prompt">{{ job.prompt }}</Detail>
+            </div>
+
             <div v-if="job.result" class="border-t border-border-1 pt-4">
                 <Detail label="Result">{{ job.result }}</Detail>
             </div>

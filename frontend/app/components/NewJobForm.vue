@@ -11,6 +11,10 @@ const language = ref("auto");
 const format = ref("all");
 const model = ref("");
 const priority = ref(0);
+const prompt = ref("");
+
+// Whisper's `--prompt` is capped at ~224 tokens; ~1000 chars stays safely under.
+const PROMPT_MAX = 1000;
 
 const models = ref<ModelInfo[]>([]);
 const submitting = ref(false);
@@ -69,6 +73,7 @@ async function submit() {
             format: format.value,
             model: model.value || undefined,
             priority: priority.value || undefined,
+            prompt: prompt.value || undefined,
         });
         emit("created", job);
     } catch (e: unknown) {
@@ -128,6 +133,22 @@ async function submit() {
                 :min="0"
                 :max="10"
             />
+        </div>
+
+        <div>
+            <DesignInput
+                v-model="prompt"
+                type="textarea"
+                label="Vocabulary prompt"
+                placeholder="Names, terms, or context to bias the decoder (e.g. Anders, Knut, Bibelen)."
+                :rows="4"
+                :maxlength="PROMPT_MAX"
+            />
+            <p
+                class="text-caption-1 text-text-hint text-right -mt-1 tabular-nums"
+            >
+                {{ prompt.length }} / {{ PROMPT_MAX }}
+            </p>
         </div>
 
         <DesignBanner v-if="error" variant="error" icon="tabler:alert-circle">

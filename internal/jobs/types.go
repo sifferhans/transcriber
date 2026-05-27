@@ -19,6 +19,7 @@ type Job struct {
 	Priority   int
 	Callback   string
 	Model      string
+	Prompt     string
 
 	Status   string
 	Progress int

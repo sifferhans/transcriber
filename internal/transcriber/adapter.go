@@ -36,7 +36,10 @@ type Request struct {
 	InputPath string
 	Language  string
 	OutputDir string
-	Options   map[string]any
+	// Prompt biases the decoder toward names and terms it might otherwise mishear.
+	// whisper.cpp truncates to ~224 tokens.
+	Prompt  string
+	Options map[string]any
 }
 
 type Result struct {
