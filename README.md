@@ -101,6 +101,24 @@ Go code. Server settings come from flags; per-machine paths from env vars.
 `model` is optional — omit to use the default. `format: "all"` writes
 json+srt+vtt+txt; or pass a comma-separated subset like `"json,srt"`.
 
+```sh
+# Submit a job, then poll until it completes.
+JOB=$(curl -sS -X POST http://localhost:8888/transcription/job \
+    -H 'content-type: application/json' \
+    -d '{
+        "path": "/mnt/storage/audio/foo.wav",
+        "language": "no",
+        "format": "all",
+        "output_path": "/mnt/storage/out/foo/",
+        "model": "whisper-cpp-large-v3"
+    }' | jq -r .id)
+
+while :; do
+    curl -sS "http://localhost:8888/transcription/job/$JOB" | jq '{status, progress, result}'
+    sleep 2
+done
+```
+
 ### `GET /transcription/job/{id}`
 
 Returns the current job state. `status` is one of `PENDING`, `RUNNING`,
