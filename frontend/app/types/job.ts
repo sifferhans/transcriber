@@ -14,6 +14,7 @@ export interface TranscribeJob {
   progress: number;
   status: JobStatus;
   result: string;
+  results?: string[];
   callback: string;
   model: string;
   prompt?: string;

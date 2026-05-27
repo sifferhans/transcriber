@@ -24,6 +24,7 @@ type Job struct {
 	Status   string
 	Progress int
 	Result   string
+	Results  []string
 	Error    string
 
 	CreatedAt time.Time

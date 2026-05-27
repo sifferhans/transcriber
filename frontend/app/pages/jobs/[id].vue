@@ -86,8 +86,17 @@ async function onCancel() {
                 <Detail label="Vocabulary prompt">{{ job.prompt }}</Detail>
             </div>
 
-            <div v-if="job.result" class="border-t border-border-1 pt-4">
-                <Detail label="Result">{{ job.result }}</Detail>
+            <div
+                v-if="job.results?.length || job.result"
+                class="border-t border-border-1 pt-4"
+            >
+                <Detail :label="`Result files (${(job.results ?? [job.result]).length})`">
+                    <ul class="space-y-1">
+                        <li v-for="p in job.results ?? [job.result]" :key="p">
+                            {{ p }}
+                        </li>
+                    </ul>
+                </Detail>
             </div>
 
             <DesignBanner

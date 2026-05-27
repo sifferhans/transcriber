@@ -129,6 +129,7 @@ func (p *Pool) runJob(parent context.Context, id string, log *slog.Logger) {
 	wantFormats := formats.Parse(job.Format)
 	basename := filepath.Base(job.Path)
 	primary := ""
+	written := make([]string, 0, len(wantFormats))
 	for _, f := range wantFormats {
 		path, err := formats.Write(f, res.Transcription, job.OutputPath, basename)
 		if err != nil {
@@ -136,6 +137,7 @@ func (p *Pool) runJob(parent context.Context, id string, log *slog.Logger) {
 			p.fireCallback(id)
 			return
 		}
+		written = append(written, path)
 		if f == formats.JSON || primary == "" {
 			primary = path
 		}
@@ -148,6 +150,7 @@ func (p *Pool) runJob(parent context.Context, id string, log *slog.Logger) {
 		j.EndedAt = endedAt
 		j.Duration = endedAt.Sub(startedAt)
 		j.Result = primary
+		j.Results = written
 	})
 	log.Info("job completed", "id", id, "duration", endedAt.Sub(startedAt))
 	p.fireCallback(id)
