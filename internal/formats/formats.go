@@ -56,6 +56,9 @@ func Write(format string, t *transcriber.Transcription, outDir string) (string, 
 	case JSON:
 		filename = "transcript.json"
 		body, err = json.MarshalIndent(t, "", "  ")
+		if err == nil {
+			body = append(body, '\n')
+		}
 	case SRT:
 		filename = "transcript.srt"
 		body = []byte(toSRT(t))
