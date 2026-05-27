@@ -8,7 +8,11 @@ const IDLE_INTERVAL_MS = 10_000;
 export function useJobsList() {
   const api = useApi();
   const cache = useJobsCache();
-  const jobs = ref<TranscribeJob[]>([]);
+  // `jobs` is useState (not ref) so it survives the route navigation away
+  // from "/" and back: when the user returns from a detail page, the list
+  // is already in the DOM on the first render, which lets the view
+  // transition find a target with `view-transition-name: job-<id>`.
+  const jobs = useState<TranscribeJob[]>("jobs-list", () => []);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
