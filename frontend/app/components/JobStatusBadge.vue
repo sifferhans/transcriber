@@ -6,14 +6,14 @@ defineProps<{ status: JobStatus }>();
 type Variant = "neutral" | "success" | "warning" | "info" | "error";
 
 const variants: Record<JobStatus, Variant> = {
-  PENDING: "neutral",
-  RUNNING: "info",
-  COMPLETED: "success",
-  FAILED: "error",
-  CANCELED: "warning",
+    PENDING: "neutral",
+    RUNNING: "info",
+    COMPLETED: "success",
+    FAILED: "error",
+    CANCELED: "warning",
 };
 </script>
 
 <template>
-  <DesignBadge :variant="variants[status]" :label="status.toLowerCase()" />
+    <DesignBadge :variant="variants[status]" :label="status.toLowerCase()" />
 </template>

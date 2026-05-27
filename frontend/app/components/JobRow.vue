@@ -8,76 +8,77 @@ const api = useApi();
 const canceling = ref(false);
 
 const canCancel = computed(
-  () => props.job.status === "PENDING" || props.job.status === "RUNNING",
+    () => props.job.status === "PENDING" || props.job.status === "RUNNING",
 );
 
 async function onCancel(e: Event) {
-  e.preventDefault();
-  e.stopPropagation();
-  if (!canCancel.value) return;
-  canceling.value = true;
-  try {
-    await api.cancelJob(props.job.id);
-    emit("cancel");
-  } finally {
-    canceling.value = false;
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    if (!canCancel.value) return;
+    canceling.value = true;
+    try {
+        await api.cancelJob(props.job.id);
+        emit("cancel");
+    } finally {
+        canceling.value = false;
+    }
 }
 </script>
 
 <template>
-  <NuxtLink
-    :to="`/jobs/${job.id}`"
-    class="block bg-surface-raise gradient-border shadow-resting hover:shadow-floating rounded-2xl transition-shadow p-4"
-  >
-    <div class="flex items-center gap-4">
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2 mb-1">
-          <JobStatusBadge :status="job.status" />
-          <span class="text-caption-1 text-text-hint font-mono">{{
-            job.id.slice(0, 8)
-          }}</span>
-          <span class="text-caption-1 text-text-hint">·</span>
-          <span class="text-caption-1 text-text-muted">{{
-            job.model || "—"
-          }}</span>
-          <template v-if="job.language">
-            <span class="text-caption-1 text-text-hint">·</span>
-            <span class="text-caption-1 text-text-muted">{{
-              job.language
-            }}</span>
-          </template>
-        </div>
-        <div class="text-body-3 text-text-default truncate font-mono">
-          {{ job.path }}
-        </div>
-      </div>
+    <NuxtLink
+        :to="`/jobs/${job.id}`"
+        class="block bg-surface-raise gradient-border shadow-resting hover:shadow-floating rounded-2xl transition-shadow p-4"
+        :style="{ 'view-transition-name': `job-${job.id}` }"
+    >
+        <div class="flex items-center gap-4">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                    <JobStatusBadge :status="job.status" />
+                    <span class="text-caption-1 text-text-hint font-mono">{{
+                        job.id.slice(0, 8)
+                    }}</span>
+                    <span class="text-caption-1 text-text-hint">·</span>
+                    <span class="text-caption-1 text-text-muted">{{
+                        job.model || "—"
+                    }}</span>
+                    <template v-if="job.language">
+                        <span class="text-caption-1 text-text-hint">·</span>
+                        <span class="text-caption-1 text-text-muted">{{
+                            job.language
+                        }}</span>
+                    </template>
+                </div>
+                <div class="text-body-3 text-text-default truncate font-mono">
+                    {{ job.path }}
+                </div>
+            </div>
 
-      <div class="flex items-center gap-3 shrink-0">
-        <ProgressBar
-          v-if="job.status === 'RUNNING'"
-          :value="job.progress"
-          class="w-28"
-        />
-        <span
-          v-else-if="job.status === 'COMPLETED' && job.duration"
-          class="text-caption-1 text-text-hint"
-        >
-          {{ job.duration }}
-        </span>
-        <DesignButton
-          v-if="canCancel"
-          variant="tertiary"
-          size="small"
-          :loading="canceling"
-          title="Cancel job"
-          aria-label="Cancel job"
-          class="text-text-hint hover:text-semantic-error!"
-          @click="onCancel"
-        >
-          <Icon v-if="!canceling" name="tabler:circle-x" size="20" />
-        </DesignButton>
-      </div>
-    </div>
-  </NuxtLink>
+            <div class="flex items-center gap-3 shrink-0">
+                <ProgressBar
+                    v-if="job.status === 'RUNNING'"
+                    :value="job.progress"
+                    class="w-28"
+                />
+                <span
+                    v-else-if="job.status === 'COMPLETED' && job.duration"
+                    class="text-caption-1 text-text-hint"
+                >
+                    {{ job.duration }}
+                </span>
+                <DesignButton
+                    v-if="canCancel"
+                    variant="tertiary"
+                    size="small"
+                    :loading="canceling"
+                    title="Cancel job"
+                    aria-label="Cancel job"
+                    class="text-text-hint hover:text-semantic-error!"
+                    @click="onCancel"
+                >
+                    <Icon v-if="!canceling" name="tabler:circle-x" size="20" />
+                </DesignButton>
+            </div>
+        </div>
+    </NuxtLink>
 </template>
