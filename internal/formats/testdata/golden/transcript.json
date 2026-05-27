@@ -1,0 +1,85 @@
+{
+  "text": "Hello world. This is a test of the transcription system. Goodbye.",
+  "segments": [
+    {
+      "text": "Hello world.",
+      "start": 0.04,
+      "end": 1.24,
+      "words": [
+        {
+          "text": "Hello",
+          "start": 0.04,
+          "end": 0.62
+        },
+        {
+          "text": "world.",
+          "start": 0.62,
+          "end": 1.24
+        }
+      ],
+      "id": 0
+    },
+    {
+      "text": "This is a test of the transcription system.",
+      "start": 1.24,
+      "end": 5.1,
+      "words": [
+        {
+          "text": "This",
+          "start": 1.24,
+          "end": 1.58
+        },
+        {
+          "text": "is",
+          "start": 1.58,
+          "end": 1.8
+        },
+        {
+          "text": "a",
+          "start": 1.8,
+          "end": 1.94
+        },
+        {
+          "text": "test",
+          "start": 1.94,
+          "end": 2.36
+        },
+        {
+          "text": "of",
+          "start": 2.36,
+          "end": 2.58
+        },
+        {
+          "text": "the",
+          "start": 2.58,
+          "end": 2.82
+        },
+        {
+          "text": "transcription",
+          "start": 2.82,
+          "end": 4.2
+        },
+        {
+          "text": "system.",
+          "start": 4.2,
+          "end": 5.1
+        }
+      ],
+      "id": 1
+    },
+    {
+      "text": "Goodbye.",
+      "start": 5.1,
+      "end": 6.45,
+      "words": [
+        {
+          "text": "Goodbye.",
+          "start": 5.1,
+          "end": 6.45
+        }
+      ],
+      "id": 2
+    }
+  ],
+  "language": "en"
+}
