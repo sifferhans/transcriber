@@ -8,7 +8,11 @@ const IDLE_INTERVAL_MS = 10_000;
 // progress feels live, then back off once it terminates.
 export function useJob(id: MaybeRefOrGetter<string>) {
   const api = useApi();
-  const job = ref<TranscribeJob | null>(null);
+  const cache = useJobsCache();
+  // Seed from the shared cache so the detail card is in the DOM on the
+  // first render — required for the route view transition to find a morph
+  // target with `view-transition-name: job-<id>`.
+  const job = ref<TranscribeJob | null>(cache.get(toValue(id)));
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -23,7 +27,9 @@ export function useJob(id: MaybeRefOrGetter<string>) {
   async function fetchOnce() {
     loading.value = true;
     try {
-      job.value = await api.getJob(toValue(id));
+      const fresh = await api.getJob(toValue(id));
+      job.value = fresh;
+      cache.set(fresh);
       error.value = null;
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : String(e);

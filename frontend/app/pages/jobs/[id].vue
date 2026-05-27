@@ -41,6 +41,7 @@ async function onCancel() {
         <div
             v-else-if="job"
             class="bg-surface-raise gradient-border rounded-3xl p-6 space-y-6 shadow-resting"
+            :style="{ 'view-transition-name': `job-${job.id}` }"
         >
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">

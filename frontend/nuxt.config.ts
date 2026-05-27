@@ -23,6 +23,10 @@ export default defineNuxtConfig({
       },
     },
   },
+  experimental: {
+    typedPages: true,
+    viewTransition: true,
+  },
   // In dev (`pnpm dev`) the frontend runs on :3000 and the Go API on :8888,
   // so we proxy each API path through Nuxt to keep the browser same-origin.
   // In the embedded production build (`make build`) the Go binary serves

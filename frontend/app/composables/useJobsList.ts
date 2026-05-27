@@ -7,6 +7,7 @@ const IDLE_INTERVAL_MS = 10_000;
 // that adapts to whether any job is currently active. Cleans up on unmount.
 export function useJobsList() {
   const api = useApi();
+  const cache = useJobsCache();
   const jobs = ref<TranscribeJob[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -24,6 +25,7 @@ export function useJobsList() {
       const all = await api.listJobs();
       // newest first
       jobs.value = all.slice().reverse();
+      cache.setMany(all);
       error.value = null;
     } catch (e: unknown) {
       error.value = errorMessage(e);
