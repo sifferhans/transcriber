@@ -1,0 +1,40 @@
+{
+  "result": { "language": "en" },
+  "transcription": [
+    {
+      "offsets": { "from": 40, "to": 1240 },
+      "text": " Hello world.",
+      "tokens": [
+        { "text": " Hello", "offsets": { "from": 40,   "to": 620  }, "id": 12842 },
+        { "text": " world", "offsets": { "from": 620,  "to": 1100 }, "id": 1002  },
+        { "text": ".",      "offsets": { "from": 1100, "to": 1240 }, "id": 13    }
+      ]
+    },
+    {
+      "offsets": { "from": 1240, "to": 5100 },
+      "text": " This is a test of the transcription system.",
+      "tokens": [
+        { "text": " This",     "offsets": { "from": 1240, "to": 1580 }, "id": 770   },
+        { "text": " is",       "offsets": { "from": 1580, "to": 1800 }, "id": 318   },
+        { "text": " a",        "offsets": { "from": 1800, "to": 1940 }, "id": 257   },
+        { "text": " test",     "offsets": { "from": 1940, "to": 2360 }, "id": 1500  },
+        { "text": " of",       "offsets": { "from": 2360, "to": 2580 }, "id": 286   },
+        { "text": " the",      "offsets": { "from": 2580, "to": 2820 }, "id": 264   },
+        { "text": " trans",    "offsets": { "from": 2820, "to": 3500 }, "id": 8757  },
+        { "text": "cription",  "offsets": { "from": 3500, "to": 4200 }, "id": 9123  },
+        { "text": " system",   "offsets": { "from": 4200, "to": 4960 }, "id": 1185  },
+        { "text": ".",         "offsets": { "from": 4960, "to": 5100 }, "id": 13    }
+      ]
+    },
+    {
+      "offsets": { "from": 5100, "to": 6450 },
+      "text": " Goodbye.",
+      "tokens": [
+        { "text": " Good",    "offsets": { "from": 5100, "to": 5800 }, "id": 2205  },
+        { "text": "bye",      "offsets": { "from": 5800, "to": 6300 }, "id": 17034 },
+        { "text": ".",        "offsets": { "from": 6300, "to": 6450 }, "id": 13    },
+        { "text": "[_EOT_]",  "offsets": { "from": 6450, "to": 6450 }, "id": 50257 }
+      ]
+    }
+  ]
+}

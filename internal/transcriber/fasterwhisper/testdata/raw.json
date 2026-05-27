@@ -1,0 +1,41 @@
+{
+  "text": " Hello world. This is a test of the transcription system. Goodbye.",
+  "language": "en",
+  "segments": [
+    {
+      "id": 0,
+      "start": 0.04,
+      "end": 1.24,
+      "text": " Hello world.",
+      "words": [
+        { "word": " Hello",  "start": 0.04, "end": 0.62, "probability": 0.95 },
+        { "word": " world.", "start": 0.62, "end": 1.24, "probability": 0.88 }
+      ]
+    },
+    {
+      "id": 1,
+      "start": 1.24,
+      "end": 5.1,
+      "text": " This is a test of the transcription system.",
+      "words": [
+        { "word": " This",          "start": 1.24, "end": 1.58, "probability": 0.97 },
+        { "word": " is",            "start": 1.58, "end": 1.8,  "probability": 0.99 },
+        { "word": " a",             "start": 1.8,  "end": 1.94, "probability": 0.99 },
+        { "word": " test",          "start": 1.94, "end": 2.36, "probability": 0.96 },
+        { "word": " of",            "start": 2.36, "end": 2.58, "probability": 0.99 },
+        { "word": " the",           "start": 2.58, "end": 2.82, "probability": 0.99 },
+        { "word": " transcription", "start": 2.82, "end": 4.2,  "probability": 0.92 },
+        { "word": " system.",       "start": 4.2,  "end": 5.1,  "probability": 0.90 }
+      ]
+    },
+    {
+      "id": 2,
+      "start": 5.1,
+      "end": 6.45,
+      "text": " Goodbye.",
+      "words": [
+        { "word": " Goodbye.", "start": 5.1, "end": 6.45, "probability": 0.97 }
+      ]
+    }
+  ]
+}

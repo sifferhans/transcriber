@@ -163,7 +163,7 @@ func parseJSON(data []byte) (*transcriber.Transcription, error) {
 			ID:               s.ID,
 			Start:            s.Start,
 			End:              s.End,
-			Text:             s.Text,
+			Text:             strings.TrimSpace(s.Text),
 			Tokens:           s.Tokens,
 			Temperature:      s.Temperature,
 			AvgLogprob:       s.AvgLogprob,
@@ -172,7 +172,7 @@ func parseJSON(data []byte) (*transcriber.Transcription, error) {
 		}
 		for _, w := range s.Words {
 			seg.Words = append(seg.Words, transcriber.Word{
-				Text:  w.Word,
+				Text:  strings.TrimSpace(w.Word),
 				Start: w.Start,
 				End:   w.End,
 			})
