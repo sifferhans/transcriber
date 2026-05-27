@@ -5,33 +5,6 @@ service (`POST /transcription/job`, `GET /transcription/job/{id}`), with
 an adapter system that lets you swap the underlying ASR backend
 (whisper.cpp, stub, ...) per request via an additive `model` field.
 
-## Layout
-
-```
-cmd/transcriber/        entrypoint
-internal/api/           HTTP server + DTOs
-internal/jobs/          in-memory job store + priority queue
-internal/worker/        worker goroutine pool
-internal/transcriber/   adapter interface
-  ├─ stub/              fake adapter for local dev / tests
-  ├─ whispercpp/        shells out to whisper.cpp CLI; model resolved
-  │                     via internal/hfcache (auto-download from HF)
-  └─ chunked/           wrapper that splits long-form audio into
-                        overlapping chunks (ffmpeg/ffprobe), transcribes
-                        each via an inner adapter, and stitches results
-                        back into one timeline
-internal/hfcache/       on-disk cache for Hugging Face model files
-                        (atomic download + per-path lock; XDG_CACHE_HOME)
-internal/formats/       json / srt / vtt / txt writers
-                        testdata/golden/ — snapshot fixtures shared by
-                        format and adapter parser tests as the
-                        cross-adapter output contract
-internal/callback/      goroutine pool that POSTs webhooks
-internal/web/           embedded SPA (//go:embed dist/* + SPA fallback)
-frontend/               Nuxt 4 SPA (ssr: false) — pnpm generate output
-                          is copied into internal/web/dist by `make frontend`
-```
-
 ## Run
 
 Two modes:
@@ -77,12 +50,12 @@ Go code. Server settings come from flags; per-machine paths from env vars.
 | `-callback-workers` | `2`     | webhook delivery goroutines                    |
 | `-default-model`    | `stub`  | adapter ID used when the request omits `model` |
 
-| Env var             | Default                         | Meaning                                                                                                                                       |
-| ------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `WHISPER_CPP_BIN`   | `/opt/homebrew/bin/whisper-cli` | whisper.cpp binary                                                                                                                            |
+| Env var             | Default                         | Meaning                                                                                                                                             |
+| ------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WHISPER_CPP_BIN`   | `/opt/homebrew/bin/whisper-cli` | whisper.cpp binary                                                                                                                                  |
 | `WHISPER_CPP_MODEL` | _(unset → fetched from HF)_     | local path override for the `whisper-cpp-large-v3` adapter. Unset = auto-download `ggerganov/whisper.cpp/ggml-large-v3.bin` via `internal/hfcache`. |
 | `NB_WHISPER_MODEL`  | _(unset → fetched from HF)_     | local path override for the `nb-whisper-large` adapter. Unset = auto-download `NbAiLab/nb-whisper-large/ggml-model.bin` via `internal/hfcache`.     |
-| `XDG_CACHE_HOME`    | `~/.cache`                      | base for the HF cache (`<root>/transcriber/hf/<repo>/<file>`).                                                                                |
+| `XDG_CACHE_HOME`    | `~/.cache`                      | base for the HF cache (`<root>/transcriber/hf/<repo>/<file>`).                                                                                      |
 
 ## API
 
