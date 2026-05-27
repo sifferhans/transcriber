@@ -3,8 +3,7 @@
 Go-based transcription API. Drop-in compatible with the existing Python
 service (`POST /transcription/job`, `GET /transcription/job/{id}`), with
 an adapter system that lets you swap the underlying ASR backend
-(whisper.cpp, faster-whisper, stub, ...) per request via an additive
-`model` field.
+(whisper.cpp, stub, ...) per request via an additive `model` field.
 
 ## Layout
 
@@ -15,12 +14,14 @@ internal/jobs/          in-memory job store + priority queue
 internal/worker/        worker goroutine pool
 internal/transcriber/   adapter interface
   ├─ stub/              fake adapter for local dev / tests
-  ├─ whispercpp/        shells out to whisper.cpp CLI
-  ├─ fasterwhisper/     shells out to whisper-ctranslate2
+  ├─ whispercpp/        shells out to whisper.cpp CLI; model resolved
+  │                     via internal/hfcache (auto-download from HF)
   └─ chunked/           wrapper that splits long-form audio into
                         overlapping chunks (ffmpeg/ffprobe), transcribes
                         each via an inner adapter, and stitches results
                         back into one timeline
+internal/hfcache/       on-disk cache for Hugging Face model files
+                        (atomic download + per-path lock; XDG_CACHE_HOME)
 internal/formats/       json / srt / vtt / txt writers
                         testdata/golden/ — snapshot fixtures shared by
                         format and adapter parser tests as the
@@ -57,10 +58,12 @@ compile (the `//go:embed` directive needs at least one file) — run
 `make frontend` once after cloning, then `go run ./cmd/transcriber` works
 on its own for API-only iteration.
 
-The real adapters (`whisper-cpp-*`, `faster-whisper-*`) require **ffmpeg**
-and **ffprobe** on `$PATH`: the chunked wrapper uses ffprobe to read the
-input duration and ffmpeg to extract each chunk to a 16kHz mono wav. The
-`stub` adapter has no external dependencies.
+The real adapters (`whisper-cpp-large-v3`, `nb-whisper-large`) require
+**whisper-cli** (whisper.cpp), **ffmpeg**, and **ffprobe** on `$PATH`:
+the chunked wrapper uses ffprobe to read the input duration and ffmpeg
+to extract each chunk to a 16kHz mono wav. Model files are downloaded
+from Hugging Face on first use and cached on disk. The `stub` adapter
+has no external dependencies.
 
 ## Configuration
 
@@ -74,15 +77,12 @@ Go code. Server settings come from flags; per-machine paths from env vars.
 | `-callback-workers` | `2`     | webhook delivery goroutines                    |
 | `-default-model`    | `stub`  | adapter ID used when the request omits `model` |
 
-| Env var                       | Default                              | Meaning                                                                                                                       |
-| ----------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `WHISPER_CPP_BIN`             | `/opt/homebrew/bin/whisper-cli`      | whisper.cpp binary                                                                                                            |
-| `WHISPER_CPP_MODEL`           | _(unset → fetched from HF)_          | local path to a `ggml-*.bin`; pins a specific file. Unset = auto-download via `internal/hfcache` and cache on disk.            |
-| `XDG_CACHE_HOME`              | `~/.cache`                           | base for the HF cache (`<root>/transcriber/hf/<repo>/<file>`).                                                                 |
-| `FASTER_WHISPER_BIN`          | `/usr/local/bin/whisper-ctranslate2` | faster-whisper CLI                                                                                                            |
-| `FASTER_WHISPER_COMPUTE_TYPE` | `float16`                            | float16 / int8_float16 / int8 / ...                                                                                           |
-| `FASTER_WHISPER_DEVICE`       | `cuda`                               | cuda / cpu / auto                                                                                                             |
-| `NB_WHISPER_MODEL`            | `NbAiLab/nb-whisper-large`           | model string passed to `whisper-ctranslate2 --model` for the `nb-whisper-large` adapter (HF CT2 repo or local path).          |
+| Env var             | Default                         | Meaning                                                                                                                                       |
+| ------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WHISPER_CPP_BIN`   | `/opt/homebrew/bin/whisper-cli` | whisper.cpp binary                                                                                                                            |
+| `WHISPER_CPP_MODEL` | _(unset → fetched from HF)_     | local path override for the `whisper-cpp-large-v3` adapter. Unset = auto-download `ggerganov/whisper.cpp/ggml-large-v3.bin` via `internal/hfcache`. |
+| `NB_WHISPER_MODEL`  | _(unset → fetched from HF)_     | local path override for the `nb-whisper-large` adapter. Unset = auto-download `NbAiLab/nb-whisper-large/ggml-model.bin` via `internal/hfcache`.     |
+| `XDG_CACHE_HOME`    | `~/.cache`                      | base for the HF cache (`<root>/transcriber/hf/<repo>/<file>`).                                                                                |
 
 ## API
 

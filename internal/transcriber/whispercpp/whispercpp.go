@@ -21,8 +21,13 @@ import (
 )
 
 type Config struct {
-	ID     string
-	Binary string
+	ID string
+	// DisplayName is the human-readable label surfaced via /models (and
+	// shown in the frontend's model picker). Two adapters can share the
+	// same Binary+Threads but point at different models — they need
+	// distinct names so the picker isn't a list of duplicates.
+	DisplayName string
+	Binary      string
 	// ModelFile is a local path to the ggml model file. If set, it wins over
 	// ResolveModel — useful for operator-pinned deployments and tests.
 	ModelFile string
@@ -52,10 +57,13 @@ func New(cfg Config) *Adapter {
 func (a *Adapter) ID() string { return a.cfg.ID }
 
 func (a *Adapter) Name() string {
-	if a.cfg.ModelFile == "" {
-		return "whisper.cpp"
+	if a.cfg.DisplayName != "" {
+		return a.cfg.DisplayName
 	}
-	return "whisper.cpp (" + filepath.Base(a.cfg.ModelFile) + ")"
+	if a.cfg.ModelFile != "" {
+		return "whisper.cpp (" + filepath.Base(a.cfg.ModelFile) + ")"
+	}
+	return "whisper.cpp"
 }
 
 var progressRe = regexp.MustCompile(`progress\s*=\s*(\d+)`)
