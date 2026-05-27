@@ -7,11 +7,7 @@ const { theme, toggle } = useTheme();
         <header class="bg-surface-default border-b border-border-1">
             <div class="mx-auto max-w-6xl px-6 py-4 flex items-center gap-3">
                 <NuxtLink to="/" class="text-title-2 items-center flex gap-2">
-                    <Icon
-                        name="tabler:wave-saw-tool"
-                        class="text-primary-default"
-                        size="20"
-                    />
+                    <AppLogo class="size-4.5" />
                     Transcriber
                 </NuxtLink>
                 <nav class="ml-auto flex items-center gap-4 text-body-3">
