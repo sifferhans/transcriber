@@ -7,85 +7,91 @@ const api = useApi();
 const canceling = ref(false);
 
 const canCancel = computed(
-  () => job.value?.status === "PENDING" || job.value?.status === "RUNNING",
+    () => job.value?.status === "PENDING" || job.value?.status === "RUNNING",
 );
 
 async function onCancel() {
-  canceling.value = true;
-  try {
-    await api.cancelJob(id.value);
-    await fetchOnce();
-  } finally {
-    canceling.value = false;
-  }
+    canceling.value = true;
+    try {
+        await api.cancelJob(id.value);
+        await fetchOnce();
+    } finally {
+        canceling.value = false;
+    }
 }
 </script>
 
 <template>
-  <div>
-    <DesignButton
-      to="/"
-      variant="tertiary"
-      size="small"
-      icon="tabler:arrow-left"
-      label="Back to jobs"
-      class="mb-4"
-    />
-
-    <DesignBanner v-if="error" variant="error" icon="tabler:alert-circle">
-      {{ error }}
-    </DesignBanner>
-
-    <DesignLoadingState v-else-if="!job && loading" :size="32" />
-
-    <div
-      v-else-if="job"
-      class="bg-surface-raise gradient-border rounded-3xl p-6 space-y-6 shadow-resting"
-    >
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <JobStatusBadge :status="job.status" />
-          <span class="font-mono text-body-3 text-text-hint">{{ job.id }}</span>
-        </div>
+    <div>
         <DesignButton
-          v-if="canCancel"
-          variant="danger"
-          size="small"
-          icon="tabler:circle-x"
-          label="Cancel"
-          :loading="canceling"
-          @click="onCancel"
+            to="/"
+            variant="tertiary"
+            size="small"
+            icon="tabler:arrow-left"
+            label="Back to jobs"
+            class="mb-4"
         />
-      </div>
 
-      <div v-if="job.status === 'RUNNING'">
+        <DesignBanner v-if="error" variant="error" icon="tabler:alert-circle">
+            {{ error }}
+        </DesignBanner>
+
+        <DesignLoadingState v-else-if="!job && loading" :size="32" />
+
         <div
-          class="flex items-center justify-between mb-1 text-caption-1 text-text-muted"
+            v-else-if="job"
+            class="bg-surface-raise gradient-border rounded-3xl p-6 space-y-6 shadow-resting"
         >
-          <span>Progress</span>
-          <span>{{ job.progress }}%</span>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <JobStatusBadge :status="job.status" />
+                    <span class="font-mono text-body-3 text-text-hint">{{
+                        job.id
+                    }}</span>
+                </div>
+                <DesignButton
+                    v-if="canCancel"
+                    variant="danger"
+                    size="small"
+                    icon="tabler:circle-x"
+                    label="Cancel"
+                    :loading="canceling"
+                    @click="onCancel"
+                />
+            </div>
+
+            <div v-if="job.status === 'RUNNING'">
+                <div
+                    class="flex items-center justify-between mb-1 text-caption-1 text-text-muted"
+                >
+                    <span>Progress</span>
+                    <span>{{ job.progress }}%</span>
+                </div>
+                <ProgressBar :value="job.progress" />
+            </div>
+
+            <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                <Detail label="Input">{{ job.path }}</Detail>
+                <Detail label="Output dir">{{ job.output_path }}</Detail>
+                <Detail label="Model">{{ job.model || "—" }}</Detail>
+                <Detail label="Language">{{ job.language || "—" }}</Detail>
+                <Detail label="Format">{{ job.format || "—" }}</Detail>
+                <Detail label="Priority">{{ job.priority }}</Detail>
+                <Detail label="Duration">{{ job.duration || "—" }}</Detail>
+                <Detail label="Callback">{{ job.callback || "—" }}</Detail>
+            </dl>
+
+            <div v-if="job.result" class="border-t border-border-1 pt-4">
+                <Detail label="Result">{{ job.result }}</Detail>
+            </div>
+
+            <DesignBanner
+                v-if="job.error"
+                variant="error"
+                icon="tabler:alert-circle"
+            >
+                <span class="font-mono">{{ job.error }}</span>
+            </DesignBanner>
         </div>
-        <ProgressBar :value="job.progress" />
-      </div>
-
-      <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-        <Detail label="Input">{{ job.path }}</Detail>
-        <Detail label="Output dir">{{ job.output_path }}</Detail>
-        <Detail label="Model">{{ job.model || "—" }}</Detail>
-        <Detail label="Language">{{ job.language || "—" }}</Detail>
-        <Detail label="Format">{{ job.format || "—" }}</Detail>
-        <Detail label="Priority">{{ job.priority }}</Detail>
-        <Detail label="Duration">{{ job.duration || "—" }}</Detail>
-        <Detail label="Callback">{{ job.callback || "—" }}</Detail>
-      </dl>
-
-      <div v-if="job.result" class="border-t border-border-1 pt-4">
-        <Detail label="Result">{{ job.result }}</Detail>
-      </div>
-
-      <DesignBanner v-if="job.error" variant="error" icon="tabler:alert-circle">
-        <span class="font-mono">{{ job.error }}</span>
-      </DesignBanner>
     </div>
-  </div>
 </template>
