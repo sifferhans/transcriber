@@ -24,3 +24,6 @@ logs
 !.env.example
 
 local_test
+
+# Default prompt file (deployment-specific vocabulary)
+prompt.txt

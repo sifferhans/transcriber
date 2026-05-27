@@ -39,3 +39,7 @@ export interface ModelInfo {
   name: string;
   default: boolean;
 }
+
+export interface ServerConfig {
+  default_prompt: string;
+}

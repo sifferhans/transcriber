@@ -17,6 +17,7 @@ const prompt = ref("");
 const PROMPT_MAX = 1000;
 
 const models = ref<ModelInfo[]>([]);
+const defaultPrompt = ref("");
 const submitting = ref(false);
 const error = ref<string | null>(null);
 
@@ -50,9 +51,14 @@ const modelOptions = computed(() =>
 
 onMounted(async () => {
     try {
-        models.value = await api.listModels();
+        const [modelList, config] = await Promise.all([
+            api.listModels(),
+            api.getConfig(),
+        ]);
+        models.value = modelList;
         const def = models.value.find((m) => m.default);
         model.value = def?.id ?? models.value[0]?.id ?? "";
+        defaultPrompt.value = config.default_prompt;
     } catch (e: unknown) {
         error.value = `Could not load models: ${e instanceof Error ? e.message : String(e)}`;
     }
@@ -136,19 +142,37 @@ async function submit() {
         </div>
 
         <div>
-            <DesignInput
-                v-model="prompt"
-                type="textarea"
-                label="Vocabulary prompt"
-                placeholder="Names, terms, or context to bias the decoder (e.g. Anders, Knut, Bibelen)."
-                :rows="4"
-                :maxlength="PROMPT_MAX"
-            />
-            <p
-                class="text-caption-1 text-text-hint text-right -mt-1 tabular-nums"
+            <label class="block mb-1 text-title-3 text-text-default">
+                Vocabulary prompt
+            </label>
+            <div
+                class="rounded-xl border border-border-1 text-body-2 text-text-default overflow-hidden"
             >
-                {{ prompt.length }} / {{ PROMPT_MAX }}
-            </p>
+                <textarea
+                    v-model="prompt"
+                    placeholder="Names, terms, or context to bias the decoder (e.g. Anders, Knut, Bibelen)."
+                    :rows="4"
+                    :maxlength="PROMPT_MAX"
+                    class="w-full bg-surface-default px-3 py-2 outline-none resize-y border-b border-border-1"
+                />
+                <div
+                    class="flex items-baseline justify-between gap-2 px-3 py-2 text-caption-1 text-text-hint"
+                >
+                    <span v-if="!prompt && defaultPrompt">
+                        Leave blank to use the server default:
+                    </span>
+                    <span v-else />
+                    <span class="tabular-nums">
+                        {{ prompt.length }} / {{ PROMPT_MAX }}
+                    </span>
+                </div>
+                <p
+                    v-if="!prompt && defaultPrompt"
+                    class="px-3 pb-2 text-body-3 text-text-default whitespace-pre-wrap font-mono opacity-80"
+                >
+                    {{ defaultPrompt }}
+                </p>
+            </div>
         </div>
 
         <DesignBanner v-if="error" variant="error" icon="tabler:alert-circle">

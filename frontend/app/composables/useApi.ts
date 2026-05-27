@@ -1,4 +1,9 @@
-import type { ModelInfo, TranscribeInput, TranscribeJob } from "~/types/job";
+import type {
+  ModelInfo,
+  ServerConfig,
+  TranscribeInput,
+  TranscribeJob,
+} from "~/types/job";
 
 // Same-origin paths: dev proxies via routeRules, prod is served by the embedded Go binary.
 export function useApi() {
@@ -15,5 +20,6 @@ export function useApi() {
         method: "DELETE",
       }),
     listModels: () => $fetch<ModelInfo[]>(`/models`),
+    getConfig: () => $fetch<ServerConfig>(`/config`),
   };
 }

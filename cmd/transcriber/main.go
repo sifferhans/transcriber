@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -23,9 +24,25 @@ func main() {
 	workers := flag.Int("workers", 2, "number of transcription worker goroutines")
 	callbackWorkers := flag.Int("callback-workers", 2, "number of webhook delivery goroutines")
 	defaultModel := flag.String("default-model", "stub", "model adapter ID to use when the request omits `model`")
+	defaultPromptFile := flag.String("default-prompt-file", "prompt.txt", "path to a file whose contents are used as the prompt when the request omits one (missing file = no default prompt)")
 	flag.Parse()
 
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo})))
+
+	var defaultPrompt string
+	if *defaultPromptFile != "" {
+		b, err := os.ReadFile(*defaultPromptFile)
+		switch {
+		case err == nil:
+			defaultPrompt = strings.TrimSpace(string(b))
+			slog.Info("loaded default prompt", "path", *defaultPromptFile, "bytes", len(defaultPrompt))
+		case os.IsNotExist(err):
+			slog.Info("no default prompt file found", "path", *defaultPromptFile)
+		default:
+			slog.Error("reading default prompt file", "path", *defaultPromptFile, "err", err)
+			os.Exit(1)
+		}
+	}
 
 	registry := buildRegistry(*defaultModel)
 	if _, ok := registry.Default(); !ok {
@@ -47,7 +64,7 @@ func main() {
 	})
 	pool.Start(ctx)
 
-	srv := api.NewServer(store, queue, registry)
+	srv := api.NewServer(store, queue, registry, defaultPrompt)
 	addr := fmt.Sprintf(":%d", *port)
 	httpSrv := &http.Server{
 		Addr:              addr,

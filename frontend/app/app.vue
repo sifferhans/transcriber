@@ -5,7 +5,7 @@ const { theme, toggle } = useTheme();
 <template>
     <div class="min-h-screen bg-surface-indent text-text-default">
         <header class="bg-surface-default border-b border-border-1">
-            <div class="mx-auto max-w-6xl px-6 py-4 flex items-center gap-3">
+            <div class="mx-auto max-w-6xl px-6 py-2 flex items-center gap-3">
                 <NuxtLink to="/" class="text-title-2 items-center flex gap-2">
                     <AppLogo class="size-4.5" />
                     Transcriber

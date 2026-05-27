@@ -12,13 +12,14 @@ import (
 )
 
 type Server struct {
-	store    *jobs.Store
-	queue    *jobs.Queue
-	registry *transcriber.Registry
+	store         *jobs.Store
+	queue         *jobs.Queue
+	registry      *transcriber.Registry
+	defaultPrompt string
 }
 
-func NewServer(store *jobs.Store, queue *jobs.Queue, registry *transcriber.Registry) *Server {
-	return &Server{store: store, queue: queue, registry: registry}
+func NewServer(store *jobs.Store, queue *jobs.Queue, registry *transcriber.Registry, defaultPrompt string) *Server {
+	return &Server{store: store, queue: queue, registry: registry, defaultPrompt: defaultPrompt}
 }
 
 // Routes mounts staticHandler at "/" when non-nil; API patterns take precedence.
@@ -29,6 +30,7 @@ func (s *Server) Routes(staticHandler http.Handler) http.Handler {
 	mux.HandleFunc("DELETE /transcription/job/{id}", s.cancelJob)
 	mux.HandleFunc("GET /transcription/jobs", s.listJobs)
 	mux.HandleFunc("GET /models", s.listModels)
+	mux.HandleFunc("GET /config", s.config)
 	mux.HandleFunc("GET /stats", s.stats)
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /readyz", s.ready)
@@ -69,6 +71,11 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	prompt := in.Prompt
+	if prompt == "" {
+		prompt = s.defaultPrompt
+	}
+
 	now := time.Now()
 	job := jobs.Job{
 		ID:         newID(),
@@ -79,7 +86,7 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 		Priority:   in.Priority,
 		Callback:   in.Callback,
 		Model:      model,
-		Prompt:     in.Prompt,
+		Prompt:     prompt,
 		Status:     jobs.StatusPending,
 		CreatedAt:  now,
 	}
@@ -140,6 +147,10 @@ func (s *Server) listModels(w http.ResponseWriter, r *http.Request) {
 		out = append(out, modelInfo{ID: m.ID(), Name: m.Name(), Default: m.ID() == defaultID})
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+func (s *Server) config(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{"default_prompt": s.defaultPrompt})
 }
 
 // stats reports counts with capitalized JSON keys; Processed = any terminal status.

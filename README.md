@@ -49,6 +49,7 @@ Go code. Server settings come from flags; per-machine paths from env vars.
 | `-workers`          | `2`     | concurrent transcription jobs                  |
 | `-callback-workers` | `2`     | webhook delivery goroutines                    |
 | `-default-model`    | `stub`  | adapter ID used when the request omits `model` |
+| `-default-prompt-file` | `prompt.txt` | file whose contents are used as the prompt when the request omits one; missing file = no default. A non-empty `prompt` in the request fully overrides it |
 
 | Env var             | Default                         | Meaning                                                                                                                                             |
 | ------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -112,6 +113,7 @@ serialize to.
 - `GET  /transcription/jobs` — list all jobs
 - `DELETE /transcription/job/{id}` — cancel a queued or running job
 - `GET  /models` — list registered adapters
+- `GET  /config` — server-side defaults (currently `default_prompt`)
 - `GET  /healthz`, `GET /readyz`
 
 ## Adding a new backend
