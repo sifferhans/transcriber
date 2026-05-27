@@ -21,15 +21,11 @@ func NewServer(store *jobs.Store, queue *jobs.Queue, registry *transcriber.Regis
 	return &Server{store: store, queue: queue, registry: registry}
 }
 
-// Routes returns the HTTP handler. If staticHandler is non-nil it is
-// mounted at "/" so the embedded SPA serves any non-API path; more
-// specific API patterns still win under Go 1.22 ServeMux precedence.
+// Routes mounts staticHandler at "/" when non-nil; API patterns take precedence.
 func (s *Server) Routes(staticHandler http.Handler) http.Handler {
 	mux := http.NewServeMux()
-	// Drop-in compatible endpoints (match the existing Python API).
 	mux.HandleFunc("POST /transcription/job", s.createJob)
 	mux.HandleFunc("GET /transcription/job/{id}", s.getJob)
-	// Additive endpoints — do not break the legacy API contract.
 	mux.HandleFunc("DELETE /transcription/job/{id}", s.cancelJob)
 	mux.HandleFunc("GET /transcription/jobs", s.listJobs)
 	mux.HandleFunc("GET /models", s.listModels)
@@ -108,9 +104,6 @@ func (s *Server) cancelJob(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not found")
 		return
 	}
-	// If the job is running, this cancels its context (kills the subprocess).
-	// If it's still pending, set status directly so a worker picking it up
-	// will skip it.
 	if !s.store.Cancel(id) {
 		s.store.Update(id, func(j *jobs.Job) {
 			if j.Status == jobs.StatusPending {
@@ -148,10 +141,7 @@ func (s *Server) listModels(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
-// stats mirrors the legacy API's `GET /stats` response shape:
-// `{Queued, Running, Processed}` with capitalized JSON keys. "Processed"
-// counts every terminal job (COMPLETED, FAILED, CANCELED), matching the
-// legacy semantics of "has been through the worker".
+// stats reports counts with capitalized JSON keys; Processed = any terminal status.
 func (s *Server) stats(w http.ResponseWriter, _ *http.Request) {
 	var out struct {
 		Queued    int `json:"Queued"`

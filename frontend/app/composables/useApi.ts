@@ -1,8 +1,6 @@
 import type { ModelInfo, TranscribeInput, TranscribeJob } from "~/types/job";
 
-// Same-origin paths in both modes: in dev Nuxt proxies them to the Go API
-// (see nuxt.config.ts routeRules), in the embedded build the Go binary
-// serves them itself.
+// Same-origin paths: dev proxies via routeRules, prod is served by the embedded Go binary.
 export function useApi() {
   return {
     listJobs: () => $fetch<TranscribeJob[]>(`/transcription/jobs`),

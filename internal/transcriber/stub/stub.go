@@ -1,6 +1,4 @@
-// Package stub provides a fake Transcriber used for local development and
-// integration tests when no real ASR backend is installed. It emits a fixed
-// transcript after simulating ~2s of work with progress updates.
+// Package stub provides a fake Transcriber for development without a real ASR backend.
 package stub
 
 import (

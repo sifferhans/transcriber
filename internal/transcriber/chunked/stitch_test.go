@@ -6,43 +6,34 @@ import (
 	"transcriber/internal/transcriber"
 )
 
-// TestStitchOffsetsAndDedups builds three chunks with deliberately
-// overlapping segments around the midpoint and verifies:
-//   - timestamps are shifted into the original timeline
-//   - segments inside the overlap are claimed by exactly one chunk
-//   - segment IDs are renumbered contiguously
-//   - top-level text is rebuilt from the kept segments
 func TestStitchOffsetsAndDedups(t *testing.T) {
 	plan := []Chunk{
 		{Index: 0, Start: 0, End: 10},
-		{Index: 1, Start: 7, End: 17},   // overlaps prev by 3s, midpoint=8.5
-		{Index: 2, Start: 14, End: 20},  // overlaps prev by 3s, midpoint=15.5
+		{Index: 1, Start: 7, End: 17},  // midpoint with prev = 8.5
+		{Index: 2, Start: 14, End: 20}, // midpoint with prev = 15.5
 	}
 	parts := []*transcriber.Transcription{
 		{
 			Language: "en",
 			Segments: []transcriber.Segment{
-				// Local times within chunk 0 ([0, 10] of source).
 				seg("alpha", 0, 4),
-				seg("beta", 4, 8), // abs ends at 8, before midpoint 8.5 → kept by chunk 0
-				seg("gamma", 8, 10), // abs starts at 8, ends at 10 — straddles midpoint 8.5 → dropped here (chunk 1 keeps it)
+				seg("beta", 4, 8),
+				seg("gamma", 8, 10), // abs 8-10, straddles 8.5 → chunk 1 keeps it
 			},
 		},
 		{
 			Language: "en",
 			Segments: []transcriber.Segment{
-				// Local times within chunk 1 ([7, 17] of source).
-				seg("gamma", 1, 3),   // abs 8–10, after midpoint 8.5 → kept here
-				seg("delta", 3, 7),   // abs 10–14 → kept (clearly in chunk 1's zone)
-				seg("epsilon", 7, 10), // abs 14–17, straddles midpoint 15.5 → dropped (chunk 2 keeps)
+				seg("gamma", 1, 3),
+				seg("delta", 3, 7),
+				seg("epsilon", 7, 10), // abs 14-17, straddles 15.5 → chunk 2 keeps it
 			},
 		},
 		{
 			Language: "en",
 			Segments: []transcriber.Segment{
-				// Local times within chunk 2 ([14, 20] of source).
-				seg("epsilon", 1, 3),  // abs 15–17, after midpoint 15.5 → kept
-				seg("zeta", 3, 6),     // abs 17–20 → kept
+				seg("epsilon", 1, 3),
+				seg("zeta", 3, 6),
 			},
 		},
 	}
@@ -63,11 +54,9 @@ func TestStitchOffsetsAndDedups(t *testing.T) {
 			t.Errorf("segment[%d].ID = %d, want %d (renumbering)", i, got.Segments[i].ID, i)
 		}
 	}
-	// Top-level text rebuilt as space-joined segments.
 	if want := "alpha beta gamma delta epsilon zeta"; got.Text != want {
 		t.Errorf("text = %q, want %q", got.Text, want)
 	}
-	// Timestamps shifted into source timeline.
 	if got.Segments[0].Start != 0 || got.Segments[0].End != 4 {
 		t.Errorf("alpha = %.2f–%.2f, want 0–4", got.Segments[0].Start, got.Segments[0].End)
 	}

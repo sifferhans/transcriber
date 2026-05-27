@@ -1,8 +1,3 @@
-<script setup lang="ts">
-// Mirrors Phoenix's CoreComponents.header/1.
-// `title` and `subtitle` slots; `actions` slot pinned to the right.
-</script>
-
 <template>
     <header
         :class="[

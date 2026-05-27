@@ -1,8 +1,5 @@
 <script setup lang="ts">
-// Mirrors Phoenix's CoreComponents.input/1 — a unified field component that
-// branches on `type` (text-like, textarea, select, checkbox). Two-way binding
-// via v-model, errors via `errors` array. For toggles, use DesignSwitch.
-
+// Unified field component branching on `type`. For toggles, use DesignSwitch.
 interface Option {
     value: string | number;
     label: string;
@@ -58,7 +55,6 @@ const fieldClass = (hasError: boolean) => [
 
 <template>
     <div class="mb-2">
-        <!-- Checkbox: label sits inline with the input -->
         <template v-if="type === 'checkbox'">
             <label
                 class="flex items-center gap-2 text-body-3 text-text-default cursor-pointer has-disabled:cursor-not-allowed has-disabled:opacity-50"
@@ -74,7 +70,6 @@ const fieldClass = (hasError: boolean) => [
             </label>
         </template>
 
-        <!-- All other types: label above field -->
         <label v-else class="block">
             <span
                 v-if="label"

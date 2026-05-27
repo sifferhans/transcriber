@@ -65,8 +65,8 @@ func TestQueue_PopBlocksUntilPush(t *testing.T) {
 		done <- id
 	}()
 
-	// give the goroutine time to actually block in Pop
-	time.Sleep(20 * time.Millisecond)
+	time.Sleep(20 * time.Millisecond) // let the goroutine block in Pop
+
 	select {
 	case <-done:
 		t.Fatal("Pop returned before any Push")
@@ -141,8 +141,7 @@ func TestQueue_Len(t *testing.T) {
 	}
 }
 
-// Many concurrent workers pop from a queue; ensure each pushed id is
-// observed exactly once. Run with -race.
+// TestQueue_ConcurrentPopNoLossNoDup checks each pushed id is observed exactly once. Run with -race.
 func TestQueue_ConcurrentPopNoLossNoDup(t *testing.T) {
 	q := NewQueue()
 	const N = 500
@@ -202,8 +201,7 @@ func TestQueue_ConcurrentPopNoLossNoDup(t *testing.T) {
 	}
 }
 
-// Close while workers are blocked in Pop: every Pop should return ok=false,
-// no deadlock. Run with -race.
+// TestQueue_CloseWakesAllWaiters: every blocked Pop must return ok=false. Run with -race.
 func TestQueue_CloseWakesAllWaiters(t *testing.T) {
 	q := NewQueue()
 	const workers = 8

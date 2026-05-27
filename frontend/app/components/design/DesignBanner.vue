@@ -1,8 +1,4 @@
 <script setup lang="ts">
-// Mirrors Phoenix's CoreComponents.banner/1.
-// Full-width tinted notice. Use for inline (in-flow) messaging; for transient
-// toast-style notifications use DesignFlash.
-
 type Variant = "neutral" | "success" | "warning" | "info" | "error";
 
 withDefaults(

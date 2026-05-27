@@ -1,7 +1,4 @@
 <script setup lang="ts">
-// Mirrors Phoenix's CoreComponents.loading_state/1.
-// Indeterminate spinner using the spinner-rotate / spinner-segment utilities.
-
 withDefaults(defineProps<{ size?: number }>(), { size: 40 });
 </script>
 

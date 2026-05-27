@@ -9,10 +9,7 @@ import (
 	"transcriber/internal/formats"
 )
 
-// goldenDir is where formats.Write's snapshot fixtures live. The adapter
-// tests share them with internal/formats: a raw whisper-cli JSON parsed by
-// this package must, after round-tripping through formats.Write, produce
-// byte-identical output to those goldens.
+// goldenDir is shared with internal/formats; parsed whisper-cli output must round-trip byte-identical.
 var goldenDir = filepath.Join("..", "..", "formats", "testdata", "golden")
 
 func TestParseJSONMatchesGoldens(t *testing.T) {

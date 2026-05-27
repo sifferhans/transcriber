@@ -2,7 +2,6 @@ package jobs
 
 import "time"
 
-// Status constants kept uppercase to match the existing Python API contract.
 const (
 	StatusPending   = "QUEUED"
 	StatusRunning   = "RUNNING"
@@ -22,8 +21,8 @@ type Job struct {
 	Model      string
 
 	Status   string
-	Progress int    // 0-100
-	Result   string // path to primary output file once COMPLETED
+	Progress int
+	Result   string
 	Error    string
 
 	CreatedAt time.Time

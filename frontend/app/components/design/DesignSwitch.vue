@@ -1,7 +1,4 @@
 <script setup lang="ts">
-// Mirrors Phoenix's CoreComponents.switch/1.
-// Visual track + thumb react to the underlying checkbox via group-has-checked.
-
 withDefaults(
     defineProps<{
         label?: string;

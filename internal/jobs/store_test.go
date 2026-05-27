@@ -27,7 +27,6 @@ func TestStore_GetReturnsCopy(t *testing.T) {
 	s.Create(Job{ID: "a", Status: StatusPending, Progress: 0})
 
 	snap, _ := s.Get("a")
-	// Mutating the caller-side snapshot must not affect the stored job.
 	snap.Progress = 99
 	if snap.Progress != 99 {
 		t.Fatal("local copy did not accept mutation")
@@ -78,7 +77,6 @@ func TestStore_UpdateMissing(t *testing.T) {
 func TestStore_ListSortedByCreatedAt(t *testing.T) {
 	s := NewStore()
 	now := time.Now()
-	// Insert out of chronological order.
 	s.Create(Job{ID: "second", CreatedAt: now.Add(2 * time.Second)})
 	s.Create(Job{ID: "first", CreatedAt: now.Add(1 * time.Second)})
 	s.Create(Job{ID: "third", CreatedAt: now.Add(3 * time.Second)})
@@ -138,7 +136,7 @@ func TestStore_CancelAfterClear(t *testing.T) {
 	}
 }
 
-// Concurrent writers + readers — meant to be exercised with `go test -race`.
+// TestStore_ConcurrentAccess is meant to be run with `go test -race`.
 func TestStore_ConcurrentAccess(t *testing.T) {
 	s := NewStore()
 	const N = 50
@@ -183,7 +181,6 @@ func idOf(i int) string {
 	return "id-" + itoa(i)
 }
 
-// avoid importing strconv just for this
 func itoa(n int) string {
 	if n == 0 {
 		return "0"

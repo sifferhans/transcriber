@@ -6,8 +6,7 @@ import (
 	"sync"
 )
 
-// Store is a goroutine-safe in-memory job store. Reads return value copies so
-// callers cannot mutate the underlying job without going through Update.
+// Store is a goroutine-safe in-memory job store. Reads return copies.
 type Store struct {
 	mu      sync.RWMutex
 	jobs    map[string]*Job
@@ -38,8 +37,7 @@ func (s *Store) Get(id string) (Job, bool) {
 	return *j, true
 }
 
-// Update applies fn to the stored job under the write lock. Returns false if
-// the job does not exist.
+// Update applies fn under the write lock; returns false if the job does not exist.
 func (s *Store) Update(id string, fn func(*Job)) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -62,8 +60,7 @@ func (s *Store) List() []Job {
 	return out
 }
 
-// SetCancel registers the cancel function for a running job so a later
-// DELETE request can kill the underlying subprocess.
+// SetCancel registers a cancel func so a later DELETE can kill the subprocess.
 func (s *Store) SetCancel(id string, cancel context.CancelFunc) {
 	s.mu.Lock()
 	s.cancels[id] = cancel
@@ -76,8 +73,7 @@ func (s *Store) ClearCancel(id string) {
 	s.mu.Unlock()
 }
 
-// Cancel invokes the registered cancel function for a running job. Returns
-// false when no cancel function is registered (job not running yet).
+// Cancel invokes the registered cancel func; returns false if none is registered.
 func (s *Store) Cancel(id string) bool {
 	s.mu.Lock()
 	cancel := s.cancels[id]

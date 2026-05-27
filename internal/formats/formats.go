@@ -11,9 +11,7 @@ import (
 	"transcriber/internal/transcriber"
 )
 
-// Format identifiers used in the API's `format` field. Each identifier is
-// also used directly as the output-file extension: e.g. `format: "words.srt"`
-// writes `<basename>.words.srt`.
+// Format identifiers double as output-file extensions.
 const (
 	JSON     = "json"
 	SRT      = "srt"
@@ -22,12 +20,10 @@ const (
 	WordsSRT = "words.srt"
 )
 
-// All returns the formats produced when the request specifies "all". Mirrors
-// the five files the legacy Python API always wrote regardless of `format`.
+// All returns the formats produced when the request specifies "all".
 func All() []string { return []string{JSON, SRT, VTT, WordsSRT, TXT} }
 
-// Parse turns the API `format` field into a list of concrete formats.
-// "" and "all" both expand to All().
+// Parse turns the `format` field into a list of formats; "" and "all" expand to All().
 func Parse(spec string) []string {
 	switch strings.ToLower(strings.TrimSpace(spec)) {
 	case "", "all":
@@ -44,11 +40,7 @@ func Parse(spec string) []string {
 	return out
 }
 
-// Write serializes the transcription to outDir/<basename>.<format>. Returns
-// the path of the written file. The basename comes from the input file
-// (e.g. "track_109473_media_en.mp3"), matching the legacy Python API's
-// `<basename>.<ext>` layout. Caller is responsible for ensuring outDir
-// exists; Write will create it if missing.
+// Write serializes the transcription to outDir/<basename>.<format>.
 func Write(format string, t *transcriber.Transcription, outDir, basename string) (string, error) {
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return "", err
@@ -97,9 +89,6 @@ func toSRT(t *transcriber.Transcription) string {
 	return sb.String()
 }
 
-// toWordsSRT emits one SRT cue per word using word-level timestamps,
-// numbered monotonically 1..N. Drop-in counterpart to the legacy Python
-// API's `<basename>.words.srt` output.
 func toWordsSRT(t *transcriber.Transcription) string {
 	var sb strings.Builder
 	n := 0

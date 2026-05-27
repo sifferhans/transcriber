@@ -10,9 +10,7 @@ import (
 	"transcriber/internal/transcriber"
 )
 
-// fixture is the Transcription that must serialize byte-for-byte to the
-// golden files in testdata/golden/. Update both this fixture and the
-// goldens together when changing the output shape.
+// fixture must serialize byte-for-byte to testdata/golden/; update both together.
 func fixture() *transcriber.Transcription {
 	return &transcriber.Transcription{
 		Text:     "Hello world. This is a test of the transcription system. Goodbye.",

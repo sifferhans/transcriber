@@ -1,11 +1,4 @@
 <script setup lang="ts">
-// Mirrors Phoenix's CoreComponents.button/1.
-//
-// When `to` is provided we render NuxtLink so client-side routing kicks in;
-// otherwise a native <button>. `danger` is added as a 4th variant since the
-// app needs destructive actions and dressing them as `tertiary` would be
-// confusing next to the semantic-error treatment elsewhere.
-
 type Variant = "primary" | "secondary" | "tertiary" | "danger";
 type Size = "small" | "medium" | "large";
 

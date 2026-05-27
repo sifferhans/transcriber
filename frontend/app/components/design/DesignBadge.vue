@@ -1,7 +1,4 @@
 <script setup lang="ts">
-// Mirrors Phoenix's CoreComponents.badge/1.
-// Single hue per variant; tinted backgrounds via /15 opacity modifier.
-
 type Variant = "neutral" | "success" | "warning" | "info" | "error";
 
 withDefaults(

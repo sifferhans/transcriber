@@ -2,8 +2,6 @@ package transcriber
 
 import "strings"
 
-// whisperSupportedLanguages mirrors the language set accepted by Whisper-family
-// models, lifted from the legacy Python API's documented allowlist.
 var whisperSupportedLanguages = map[string]bool{
 	"en": true, "zh": true, "de": true, "es": true, "ru": true, "ko": true,
 	"fr": true, "ja": true, "pt": true, "tr": true, "pl": true, "ca": true,
@@ -24,8 +22,7 @@ var whisperSupportedLanguages = map[string]bool{
 	"ba": true, "jw": true, "su": true, "yue": true,
 }
 
-// NormalizeLanguage lowercases the input and falls back to "auto" when the
-// language code is not in the Whisper-supported set.
+// NormalizeLanguage falls back to "auto" when the language code is unsupported.
 func NormalizeLanguage(language string) string {
 	language = strings.ToLower(language)
 	if language == "auto" || language == "" {

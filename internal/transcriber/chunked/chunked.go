@@ -1,17 +1,4 @@
-// Package chunked wraps any transcriber.Transcriber to split long-form audio
-// into fixed-window chunks with a few seconds of overlap, transcribe each
-// chunk through the underlying adapter, and stitch the per-chunk results
-// back into one Transcription on the original timeline.
-//
-// Motivation: whisper internally operates on 30s windows and stitches them.
-// On hour-long inputs (e.g. sermons), accumulated drift and rare
-// hallucinations get noticeable. Chunking at the API level keeps each
-// adapter invocation short, which improves quality and also enables
-// optional parallelism on multi-GPU / multi-core hosts.
-//
-// Short files (duration <= chunk length) bypass chunking entirely and call
-// the underlying adapter directly — no extra ffmpeg invocation, no
-// stitching overhead.
+// Package chunked wraps a Transcriber to split long audio into overlapping chunks and stitch results.
 package chunked
 
 import (
@@ -25,21 +12,14 @@ import (
 )
 
 type Config struct {
-	// ChunkLengthSec is the target length of each chunk. Defaults to 300 (5 min).
 	ChunkLengthSec float64
-	// OverlapSec is how much adjacent chunks overlap. Defaults to 3.
-	OverlapSec float64
-	// Parallelism is the number of chunks transcribed concurrently. Defaults
-	// to 1. Set higher only if the underlying adapter doesn't serialize on
-	// a single GPU / model instance.
+	OverlapSec     float64
+	// Parallelism only helps when the inner adapter doesn't serialize on a single GPU.
 	Parallelism int
-	// FFmpegBin / FFprobeBin override the binary names (default: "ffmpeg" / "ffprobe").
-	FFmpegBin  string
-	FFprobeBin string
+	FFmpegBin   string
+	FFprobeBin  string
 }
 
-// Adapter is the chunking wrapper. It implements transcriber.Transcriber and
-// delegates the actual ASR work to Inner.
 type Adapter struct {
 	Inner transcriber.Transcriber
 	cfg   Config
@@ -66,7 +46,6 @@ func (a *Adapter) Transcribe(ctx context.Context, req transcriber.Request, onPro
 	if err != nil {
 		return nil, fmt.Errorf("chunked: probe duration: %w", err)
 	}
-	// Short files: skip chunking entirely.
 	if duration <= a.cfg.ChunkLengthSec {
 		return a.Inner.Transcribe(ctx, req, onProgress)
 	}
@@ -147,14 +126,12 @@ func (a *Adapter) transcribeChunk(ctx context.Context, req transcriber.Request, 
 	return res.Transcription, nil
 }
 
-// progressTracker aggregates per-chunk progress (0..1) into a single overall
-// fraction reported to the caller. Each chunk gets a `reporter` whose
-// updates are clamped to its slice of the overall progress bar.
+// progressTracker aggregates per-chunk progress into an overall fraction.
 type progressTracker struct {
 	total    int
 	onUpdate transcriber.ProgressFunc
 	mu       sync.Mutex
-	frac     []float64 // 0..1 per chunk
+	frac     []float64
 }
 
 func newProgressTracker(total int, onUpdate transcriber.ProgressFunc) *progressTracker {

@@ -9,8 +9,6 @@ export default defineNuxtConfig({
   ssr: false,
   css: ["~/assets/css/main.css"],
   modules: ["@nuxt/icon", "@nuxt/fonts"],
-  // Disable the directory-name component prefix so `components/design/Foo.vue`
-  // auto-imports as `<Foo>`, not `<DesignFoo>`.
   components: [{ path: "~/components", pathPrefix: false }],
   vite: {
     plugins: [tailwindcss()],
@@ -31,11 +29,7 @@ export default defineNuxtConfig({
     typedPages: true,
     viewTransition: true,
   },
-  // In dev (`pnpm dev`) the frontend runs on :3000 and the Go API on :8888,
-  // so we proxy each API path through Nuxt to keep the browser same-origin.
-  // In the embedded production build (`make build`) the Go binary serves
-  // both the SPA and the API on the same port, so these paths resolve
-  // natively — the frontend code uses identical URLs in both modes.
+  // Dev: proxy API paths to the Go server. Prod: the binary serves both, so these resolve natively.
   routeRules: {
     "/transcription/**": { proxy: `${TRANSCRIBER_API}/transcription/**` },
     "/models": { proxy: `${TRANSCRIBER_API}/models` },

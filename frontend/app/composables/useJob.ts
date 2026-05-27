@@ -4,14 +4,10 @@ import type { TranscribeJob } from "~/types/job";
 const ACTIVE_INTERVAL_MS = 1500;
 const IDLE_INTERVAL_MS = 10_000;
 
-// useJob polls a single job; intervals shorten while the job is active so
-// progress feels live, then back off once it terminates.
 export function useJob(id: MaybeRefOrGetter<string>) {
   const api = useApi();
   const cache = useJobsCache();
-  // Seed from the shared cache so the detail card is in the DOM on the
-  // first render — required for the route view transition to find a morph
-  // target with `view-transition-name: job-<id>`.
+  // Seed from cache so the detail card is in the DOM at first render for the view transition.
   const job = ref<TranscribeJob | null>(cache.get(toValue(id)));
   const loading = ref(false);
   const error = ref<string | null>(null);

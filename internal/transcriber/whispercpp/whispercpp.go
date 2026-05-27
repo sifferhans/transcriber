@@ -1,6 +1,4 @@
-// Package whispercpp adapts the whisper.cpp CLI (the `main` / `whisper-cli`
-// binary) to the Transcriber interface. The binary writes a JSON file we
-// then parse into the unified Transcription shape.
+// Package whispercpp adapts the whisper.cpp CLI to the Transcriber interface.
 package whispercpp
 
 import (
@@ -21,21 +19,11 @@ import (
 )
 
 type Config struct {
-	ID string
-	// DisplayName is the human-readable label surfaced via /models (and
-	// shown in the frontend's model picker). Two adapters can share the
-	// same Binary+Threads but point at different models — they need
-	// distinct names so the picker isn't a list of duplicates.
+	ID          string
 	DisplayName string
 	Binary      string
-	// ModelFile is a local path to the ggml model file. If set, it wins over
-	// ResolveModel — useful for operator-pinned deployments and tests.
-	ModelFile string
-	// ResolveModel is called on first Transcribe when ModelFile is empty.
-	// Typically wired to hfcache.Cache.Get so the model is downloaded from
-	// Hugging Face on demand and cached on disk. Keeping this as a hook
-	// (rather than a direct hfcache dep) decouples the adapter from any
-	// specific resolver and keeps tests cheap.
+	// ModelFile, when set, wins over ResolveModel.
+	ModelFile    string
 	ResolveModel func(ctx context.Context) (string, error)
 	Threads      int
 }
@@ -143,9 +131,7 @@ func (a *Adapter) Transcribe(ctx context.Context, req transcriber.Request, onPro
 	}, nil
 }
 
-// stderrCapture reads whisper-cli's stderr, dispatches progress lines to
-// onProgress, and buffers the tail of non-progress lines so they can be
-// included in the exit error when the process fails.
+// stderrCapture dispatches progress lines and buffers the tail for the exit error.
 type stderrCapture struct {
 	done chan struct{}
 	tail []string
@@ -184,9 +170,7 @@ func (c *stderrCapture) wait() string {
 	return strings.Join(c.tail, "\n")
 }
 
-// whisper.cpp `--output-json-full` shape: each transcription entry contains
-// the text plus per-token timestamps (ms via offsets.from/to). Tokens are
-// BPE pieces — words start at a token whose text begins with a space.
+// whisper.cpp `--output-json-full` shape; offsets are in ms.
 type rawOutput struct {
 	Result struct {
 		Language string `json:"language"`
@@ -196,7 +180,7 @@ type rawOutput struct {
 
 type rawSegment struct {
 	Offsets struct {
-		From int `json:"from"` // milliseconds
+		From int `json:"from"`
 		To   int `json:"to"`
 	} `json:"offsets"`
 	Text   string     `json:"text"`
@@ -212,8 +196,7 @@ type rawToken struct {
 	ID int `json:"id"`
 }
 
-// Whisper's vocab puts the first special token at id 50256 ([_BEG_]/<|endoftext|>);
-// anything at or above this is a control token that shouldn't appear in words.
+// Whisper vocab: id >= 50256 is a control token, not a word piece.
 const firstSpecialTokenID = 50256
 
 func parseJSON(data []byte, fallbackLang string) (*transcriber.Transcription, error) {
@@ -245,9 +228,7 @@ func parseJSON(data []byte, fallbackLang string) (*transcriber.Transcription, er
 	return t, nil
 }
 
-// tokensToWords groups BPE tokens into words. A new word begins when a
-// token's text starts with a space; subsequent tokens (sub-word pieces or
-// trailing punctuation) attach to the current word.
+// tokensToWords groups BPE tokens into words; a leading space starts a new word.
 func tokensToWords(tokens []rawToken) []transcriber.Word {
 	if len(tokens) == 0 {
 		return nil

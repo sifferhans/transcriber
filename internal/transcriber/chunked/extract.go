@@ -8,8 +8,7 @@ import (
 	"strings"
 )
 
-// ProbeDuration returns the duration in seconds of an audio file via ffprobe.
-// Requires ffprobe on $PATH.
+// ProbeDuration returns the audio duration in seconds via ffprobe.
 func ProbeDuration(ctx context.Context, ffprobeBin, path string) (float64, error) {
 	if ffprobeBin == "" {
 		ffprobeBin = "ffprobe"
@@ -32,14 +31,8 @@ func ProbeDuration(ctx context.Context, ffprobeBin, path string) (float64, error
 	return d, nil
 }
 
-// ExtractChunk writes a 16kHz mono PCM wav of the requested time range to
-// outPath. Whisper backends consume 16kHz mono natively; standardizing here
-// also means each chunk transcription does no decoding of its own.
-//
-// We place `-ss` and `-t` *after* `-i` for accurate seek; the fast-seek
-// variant ("-ss" before "-i") can land on a non-keyframe and skew timing by
-// hundreds of ms — unacceptable when downstream timestamps must align to the
-// original timeline.
+// ExtractChunk writes a 16kHz mono PCM wav of the range to outPath.
+// `-ss` is placed after `-i` for accurate seek (fast-seek skews timing by up to hundreds of ms).
 func ExtractChunk(ctx context.Context, ffmpegBin, inputPath, outPath string, startSec, durationSec float64) error {
 	if ffmpegBin == "" {
 		ffmpegBin = "ffmpeg"

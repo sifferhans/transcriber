@@ -7,14 +7,11 @@ import (
 	"time"
 )
 
-// Queue is a goroutine-safe priority queue. Pop blocks until an item is
-// available, the context is canceled, or the queue is closed.
-//
-// Ordering: higher Priority first; FIFO within equal priority (older first).
+// Queue is a goroutine-safe priority queue: higher Priority first, FIFO within ties.
 type Queue struct {
 	mu     sync.Mutex
 	heap   itemHeap
-	signal chan struct{} // buffered size 1: "something may be in the queue"
+	signal chan struct{} // buffered size 1, coalesces "something may be in the queue"
 	done   chan struct{}
 }
 
@@ -39,9 +36,7 @@ func (q *Queue) Pop(ctx context.Context) (string, bool) {
 			item := heap.Pop(&q.heap).(*queueItem)
 			more := q.heap.Len() > 0
 			q.mu.Unlock()
-			// Re-signal so other waiting workers wake up if items remain;
-			// the buffered-channel signal is coalescing, so a single Push
-			// might otherwise wake only one waiter even when many items are queued.
+			// Re-signal so other waiters wake up: the coalescing signal would otherwise wake only one.
 			if more {
 				q.notify()
 			}
@@ -51,7 +46,6 @@ func (q *Queue) Pop(ctx context.Context) (string, bool) {
 
 		select {
 		case <-q.signal:
-			// loop and try again
 		case <-q.done:
 			return "", false
 		case <-ctx.Done():
@@ -69,7 +63,6 @@ func (q *Queue) Len() int {
 func (q *Queue) Close() {
 	select {
 	case <-q.done:
-		// already closed
 	default:
 		close(q.done)
 	}
@@ -79,7 +72,6 @@ func (q *Queue) notify() {
 	select {
 	case q.signal <- struct{}{}:
 	default:
-		// signal already pending — coalesce
 	}
 }
 

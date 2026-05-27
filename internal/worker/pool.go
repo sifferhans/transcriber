@@ -16,15 +16,14 @@ import (
 	"transcriber/internal/transcriber"
 )
 
-// Pool is a fixed-size set of worker goroutines that pull jobs from the
-// queue and execute them via the configured Transcriber adapter.
+// Pool is a fixed-size worker pool that runs jobs through the configured adapter.
 type Pool struct {
 	workers  int
 	store    *jobs.Store
 	queue    *jobs.Queue
 	registry *transcriber.Registry
 	notifier *callback.Notifier
-	dtoFn    func(jobs.Job) any // serialize job for callback body
+	dtoFn    func(jobs.Job) any
 	wg       sync.WaitGroup
 }
 
@@ -77,7 +76,6 @@ func (p *Pool) runJob(parent context.Context, id string, log *slog.Logger) {
 		log.Warn("job vanished from store", "id", id)
 		return
 	}
-	// Skip jobs that were canceled while still pending.
 	if job.Status == jobs.StatusCanceled {
 		return
 	}

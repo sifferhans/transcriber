@@ -1,8 +1,4 @@
 <script setup lang="ts">
-// Mirrors Phoenix's CoreComponents.view_state/1.
-// Centered empty/error/info placeholder with icon + title + description +
-// optional action slot. EmptyState and ErrorState wrap this with defaults.
-
 withDefaults(
     defineProps<{
         icon?: string;

@@ -1,11 +1,4 @@
-// Package hfcache resolves and caches Hugging Face model files on the local
-// filesystem. The first Get for a given (repo, file) downloads from
-// huggingface.co and writes to disk atomically; subsequent calls return the
-// cached path without hitting the network.
-//
-// Phase 1 of swapping operator-managed model files for self-service HF
-// downloads. Pairs with adapters whose Config takes a `ResolveModel` hook,
-// keeping the cache package decoupled from any specific backend.
+// Package hfcache resolves and caches Hugging Face model files on the local filesystem.
 package hfcache
 
 import (
@@ -21,7 +14,6 @@ import (
 	"time"
 )
 
-// defaultBaseURL is the public Hugging Face Hub. Overridable per-Cache for tests.
 const defaultBaseURL = "https://huggingface.co"
 
 type Cache struct {
@@ -42,24 +34,18 @@ func New(root string) *Cache {
 	}
 }
 
-// Default returns a Cache rooted at $XDG_CACHE_HOME/transcriber/hf or
-// ~/.cache/transcriber/hf if XDG_CACHE_HOME is unset.
+// Default returns a Cache rooted at $XDG_CACHE_HOME/transcriber/hf (or ~/.cache).
 func Default() *Cache {
 	return New(filepath.Join(userCacheDir(), "transcriber", "hf"))
 }
 
-// WithBaseURL overrides the Hugging Face host. Used in tests to point at a
-// fake server.
+// WithBaseURL overrides the Hugging Face host (used in tests).
 func (c *Cache) WithBaseURL(url string) *Cache {
 	c.baseURL = url
 	return c
 }
 
-// Get returns a local filesystem path for repo/file. On cache miss it
-// downloads the file from <baseURL>/<repo>/resolve/main/<file> and writes
-// atomically (download to .partial, rename on success). Concurrent calls
-// for the same (repo, file) serialize on a per-path mutex so only one
-// downloader runs at a time.
+// Get returns a local path for repo/file, downloading atomically on cache miss.
 func (c *Cache) Get(ctx context.Context, repo, file string) (string, error) {
 	if repo == "" || file == "" {
 		return "", errors.New("hfcache: repo and file required")

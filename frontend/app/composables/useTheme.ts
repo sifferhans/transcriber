@@ -1,12 +1,10 @@
-// Theme toggle backed by localStorage. Reflected onto `<html data-theme>`,
-// which the CSS variables in main.css key off of.
-
+// Theme toggle backed by localStorage, reflected onto `<html data-theme>` (consumed by CSS variables).
 export type Theme = "light" | "dark";
 
 const STORAGE_KEY = "theme";
 const DEFAULT_THEME: Theme = "dark";
 
-// Module-scoped so every caller shares the same reactive state.
+// Module-scoped so all callers share the same reactive state.
 const theme = ref<Theme>(DEFAULT_THEME);
 let initialized = false;
 

@@ -10,9 +10,7 @@ import (
 	"time"
 )
 
-// Notifier delivers webhook callbacks for completed jobs on a small goroutine
-// pool, with exponential backoff. Workers Enqueue and continue immediately so
-// transcription throughput is not gated on webhook latency.
+// Notifier delivers webhook callbacks on a worker pool with exponential backoff.
 type Notifier struct {
 	queue   chan task
 	client  *http.Client
@@ -52,9 +50,7 @@ func (n *Notifier) Shutdown() {
 	n.wg.Wait()
 }
 
-// Enqueue serializes payload as JSON-encoded body to be POSTed to url.
-// Returns an error if the queue is full so the caller can decide whether
-// to drop or block; current callers drop and log.
+// Enqueue queues a JSON body to be POSTed to url; returns an error if the queue is full.
 func (n *Notifier) Enqueue(url string, body []byte) error {
 	if url == "" {
 		return nil

@@ -1,5 +1,3 @@
-// Mirrors the Go DTOs in internal/api/dto.go.
-
 export type JobStatus =
   | "PENDING"
   | "RUNNING"

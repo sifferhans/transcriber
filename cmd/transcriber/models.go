@@ -11,16 +11,6 @@ import (
 	"transcriber/internal/transcriber/whispercpp"
 )
 
-// buildRegistry declares every Transcriber the server can use.
-//
-// To add a new model: import its adapter package and append another
-// Register call. Multiple variants of the same backend live as separate
-// entries with distinct IDs so a job request can pick between them via
-// the `model` field.
-//
-// Model files are fetched from Hugging Face on first use and cached on
-// disk via internal/hfcache. The matching `*_MODEL` env vars still work
-// as local-path overrides for operator-pinned deployments.
 func buildRegistry(defaultID string) *transcriber.Registry {
 	r := transcriber.NewRegistry(defaultID)
 
@@ -29,8 +19,6 @@ func buildRegistry(defaultID string) *transcriber.Registry {
 	cache := hfcache.Default()
 	whisperBin := envOr("WHISPER_CPP_BIN", "/opt/homebrew/bin/whisper-cli")
 
-	// OpenAI Whisper large-v3 via whisper.cpp. GGML pulled from ggerganov's
-	// official mirror on first request.
 	r.Register(chunked.New(
 		whispercpp.New(whispercpp.Config{
 			ID:          "whisper-cpp-large-v3",
@@ -45,8 +33,6 @@ func buildRegistry(defaultID string) *transcriber.Registry {
 		chunked.Config{},
 	))
 
-	// Norwegian-tuned Whisper large from NbAiLab. The repo itself ships a
-	// GGML build (`ggml-model.bin`) alongside the safetensors weights.
 	r.Register(chunked.New(
 		whispercpp.New(whispercpp.Config{
 			ID:          "nb-whisper-large",
@@ -61,9 +47,7 @@ func buildRegistry(defaultID string) *transcriber.Registry {
 		chunked.Config{},
 	))
 
-	// Drop-in aliases for the legacy Python API's allowlist. Sub-large sizes
-	// upgrade to the large model — faithful to the old runner's behavior
-	// of silently coercing anything outside its allowlist to large.
+	// Sub-large sizes upgrade to large — matches the old runner's coercion behavior.
 	r.Alias("openai/whisper-large-v3", "whisper-cpp-large-v3")
 	r.Alias("openai/whisper-large-v2", "whisper-cpp-large-v3")
 	r.Alias("openai/whisper-large", "whisper-cpp-large-v3")

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// Empty-state wrapper around DesignViewState with friendly defaults.
 withDefaults(
     defineProps<{
         icon?: string;

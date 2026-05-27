@@ -5,8 +5,7 @@ import (
 	"time"
 )
 
-// Transcription is the unified transcript shape returned by every adapter.
-// It mirrors the OpenAI Whisper JSON layout used in the existing Python API.
+// Transcription mirrors the OpenAI Whisper JSON layout.
 type Transcription struct {
 	Text     string    `json:"text"`
 	Segments []Segment `json:"segments"`
@@ -72,10 +71,7 @@ func (r *Registry) Register(t Transcriber) {
 	r.adapters[t.ID()] = t
 }
 
-// Alias makes `from` resolve to the same adapter as `to`. Used to accept
-// legacy model IDs (e.g. "openai/whisper-large-v3") that the caller still
-// sends but which aren't registered as first-class adapter IDs. Aliases
-// don't appear in List() — the canonical IDs are the source of truth.
+// Alias makes `from` resolve to the same adapter as `to`. Aliases are not listed.
 func (r *Registry) Alias(from, to string) {
 	r.aliases[from] = to
 }
