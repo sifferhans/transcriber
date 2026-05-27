@@ -290,3 +290,38 @@
         stroke-dashoffset: 47.12;
     }
 }
+
+/*
+ * View Transitions
+ *
+ * By default the browser animates the wrapper (::view-transition-image-pair)
+ * between old and new sizes, but the two snapshots inside it stay at their
+ * captured pixel dimensions and just cross-fade in place — so the row→card
+ * morph reads as "fade + reposition", not "morph". Stretching the snapshots
+ * to fill their wrapper makes the size change visible.
+ *
+ * `object-fit: fill` distorts the bitmap to match the wrapper's animating
+ * box. For a card that's mostly text on flat surfaces this reads as a clean
+ * grow/shrink; switch to `cover` if you ever transition between elements
+ * with sharply different aspect ratios and want to crop instead.
+ */
+::view-transition-old(*),
+::view-transition-new(*) {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+}
+
+/*
+ * Slow the default 0.25s animation so the morph is perceptible. Tune to
+ * taste — 350ms with a soft ease is comfortable; faster feels snappier.
+ */
+::view-transition-group(*) {
+    animation-duration: 300ms;
+    animation-timing-function: cubic-bezier(
+        0.16,
+        1,
+        0.3,
+        1
+    ); /* ease-out-expo */
+}
