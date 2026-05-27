@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -128,9 +129,10 @@ func (p *Pool) runJob(parent context.Context, id string, log *slog.Logger) {
 	}
 
 	wantFormats := formats.Parse(job.Format)
+	basename := filepath.Base(job.Path)
 	primary := ""
 	for _, f := range wantFormats {
-		path, err := formats.Write(f, res.Transcription, job.OutputPath)
+		path, err := formats.Write(f, res.Transcription, job.OutputPath, basename)
 		if err != nil {
 			p.markFailed(id, fmt.Errorf("write %s: %w", f, err))
 			p.fireCallback(id)

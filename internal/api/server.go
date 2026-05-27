@@ -33,6 +33,7 @@ func (s *Server) Routes(staticHandler http.Handler) http.Handler {
 	mux.HandleFunc("DELETE /transcription/job/{id}", s.cancelJob)
 	mux.HandleFunc("GET /transcription/jobs", s.listJobs)
 	mux.HandleFunc("GET /models", s.listModels)
+	mux.HandleFunc("GET /stats", s.stats)
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /readyz", s.ready)
 	if staticHandler != nil {
@@ -54,6 +55,9 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 	if in.OutputPath == "" {
 		writeError(w, http.StatusBadRequest, "missing output_path")
 		return
+	}
+	if in.Priority <= 0 {
+		in.Priority = 1000
 	}
 
 	model := in.Model
@@ -85,7 +89,7 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 	s.store.Create(job)
 	s.queue.Push(job.ID, job.Priority, job.CreatedAt)
 
-	writeJSON(w, http.StatusCreated, ToDTO(job))
+	writeJSON(w, http.StatusAccepted, ToDTO(job))
 }
 
 func (s *Server) getJob(w http.ResponseWriter, r *http.Request) {
@@ -140,6 +144,29 @@ func (s *Server) listModels(w http.ResponseWriter, r *http.Request) {
 	out := make([]modelInfo, 0, len(models))
 	for _, m := range models {
 		out = append(out, modelInfo{ID: m.ID(), Name: m.Name(), Default: m.ID() == defaultID})
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+// stats mirrors the old ai-api `GET /stats` response shape:
+// `{Queued, Running, Processed}` with capitalized JSON keys. "Processed"
+// counts every terminal job (COMPLETED, FAILED, CANCELED), matching the
+// legacy semantics of "has been through the worker".
+func (s *Server) stats(w http.ResponseWriter, _ *http.Request) {
+	var out struct {
+		Queued    int `json:"Queued"`
+		Running   int `json:"Running"`
+		Processed int `json:"Processed"`
+	}
+	for _, j := range s.store.List() {
+		switch j.Status {
+		case jobs.StatusPending:
+			out.Queued++
+		case jobs.StatusRunning:
+			out.Running++
+		case jobs.StatusCompleted, jobs.StatusFailed, jobs.StatusCanceled:
+			out.Processed++
+		}
 	}
 	writeJSON(w, http.StatusOK, out)
 }

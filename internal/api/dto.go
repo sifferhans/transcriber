@@ -60,5 +60,5 @@ func formatDuration(d time.Duration) string {
 	if d == 0 {
 		return ""
 	}
-	return d.String()
+	return "duration: " + d.String()
 }

@@ -11,16 +11,20 @@ import (
 	"transcriber/internal/transcriber"
 )
 
-// Format identifiers used in the API's `format` field.
+// Format identifiers used in the API's `format` field. Each identifier is
+// also used directly as the output-file extension: e.g. `format: "words.srt"`
+// writes `<basename>.words.srt`.
 const (
-	JSON = "json"
-	SRT  = "srt"
-	VTT  = "vtt"
-	TXT  = "txt"
+	JSON     = "json"
+	SRT      = "srt"
+	VTT      = "vtt"
+	TXT      = "txt"
+	WordsSRT = "words.srt"
 )
 
-// All returns the formats produced when the request specifies "all".
-func All() []string { return []string{JSON, SRT, VTT, TXT} }
+// All returns the formats produced when the request specifies "all". Mirrors
+// the five files the legacy Python API always wrote regardless of `format`.
+func All() []string { return []string{JSON, SRT, VTT, WordsSRT, TXT} }
 
 // Parse turns the API `format` field into a list of concrete formats.
 // "" and "all" both expand to All().
@@ -40,41 +44,40 @@ func Parse(spec string) []string {
 	return out
 }
 
-// Write serializes the transcription to outDir/transcript.<format>. Returns
-// the path of the written file. Caller is responsible for ensuring outDir
+// Write serializes the transcription to outDir/<basename>.<format>. Returns
+// the path of the written file. The basename comes from the input file
+// (e.g. "track_109473_media_en.mp3"), matching the legacy Python API's
+// `<basename>.<ext>` layout. Caller is responsible for ensuring outDir
 // exists; Write will create it if missing.
-func Write(format string, t *transcriber.Transcription, outDir string) (string, error) {
+func Write(format string, t *transcriber.Transcription, outDir, basename string) (string, error) {
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return "", err
 	}
 	var (
-		filename string
-		body     []byte
-		err      error
+		body []byte
+		err  error
 	)
 	switch format {
 	case JSON:
-		filename = "transcript.json"
 		body, err = json.MarshalIndent(t, "", "  ")
 		if err == nil {
 			body = append(body, '\n')
 		}
 	case SRT:
-		filename = "transcript.srt"
 		body = []byte(toSRT(t))
 	case VTT:
-		filename = "transcript.vtt"
 		body = []byte(toVTT(t))
 	case TXT:
-		filename = "transcript.txt"
 		body = []byte(strings.TrimSpace(t.Text) + "\n")
+	case WordsSRT:
+		body = []byte(toWordsSRT(t))
 	default:
 		return "", fmt.Errorf("unsupported format: %s", format)
 	}
 	if err != nil {
 		return "", err
 	}
-	path := filepath.Join(outDir, filename)
+	path := filepath.Join(outDir, basename+"."+format)
 	if err := os.WriteFile(path, body, 0o644); err != nil {
 		return "", err
 	}
@@ -90,6 +93,26 @@ func toSRT(t *transcriber.Transcription) string {
 			srtTime(seg.End),
 			strings.TrimSpace(seg.Text),
 		)
+	}
+	return sb.String()
+}
+
+// toWordsSRT emits one SRT cue per word using word-level timestamps,
+// numbered monotonically 1..N. Drop-in counterpart to the legacy Python
+// API's `<basename>.words.srt` output.
+func toWordsSRT(t *transcriber.Transcription) string {
+	var sb strings.Builder
+	n := 0
+	for _, seg := range t.Segments {
+		for _, w := range seg.Words {
+			n++
+			fmt.Fprintf(&sb, "%d\n%s --> %s\n%s\n\n",
+				n,
+				srtTime(w.Start),
+				srtTime(w.End),
+				strings.TrimSpace(w.Text),
+			)
+		}
 	}
 	return sb.String()
 }

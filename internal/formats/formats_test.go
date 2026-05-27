@@ -64,13 +64,14 @@ func TestWriteMatchesGolden(t *testing.T) {
 		{"srt", formats.SRT, "transcript.srt"},
 		{"vtt", formats.VTT, "transcript.vtt"},
 		{"txt", formats.TXT, "transcript.txt"},
+		{"words.srt", formats.WordsSRT, "transcript.words.srt"},
 	}
 
 	tr := fixture()
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			tmp := t.TempDir()
-			path, err := formats.Write(tc.format, tr, tmp)
+			path, err := formats.Write(tc.format, tr, tmp, "transcript")
 			if err != nil {
 				t.Fatalf("Write(%s): %v", tc.format, err)
 			}
