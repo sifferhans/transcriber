@@ -98,7 +98,6 @@ func (p *Pool) runJob(parent context.Context, id string, log *slog.Logger) {
 	p.store.Update(id, func(j *jobs.Job) {
 		j.Status = jobs.StatusRunning
 		j.StartedAt = startedAt
-		j.Model = adapter.ID()
 	})
 	log.Info("job started", "id", id, "model", adapter.ID(), "path", job.Path)
 

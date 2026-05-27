@@ -74,13 +74,15 @@ Go code. Server settings come from flags; per-machine paths from env vars.
 | `-callback-workers` | `2`     | webhook delivery goroutines                    |
 | `-default-model`    | `stub`  | adapter ID used when the request omits `model` |
 
-| Env var                       | Default                              | Meaning                             |
-| ----------------------------- | ------------------------------------ | ----------------------------------- |
-| `WHISPER_CPP_BIN`             | `/opt/homebrew/bin/whisper-cli`      | whisper.cpp binary                  |
-| `WHISPER_CPP_MODEL`           | `$HOME/models/ggml-base.bin`         | whisper.cpp model file              |
-| `FASTER_WHISPER_BIN`          | `/usr/local/bin/whisper-ctranslate2` | faster-whisper CLI                  |
-| `FASTER_WHISPER_COMPUTE_TYPE` | `float16`                            | float16 / int8_float16 / int8 / ... |
-| `FASTER_WHISPER_DEVICE`       | `cuda`                               | cuda / cpu / auto                   |
+| Env var                       | Default                              | Meaning                                                                                                                       |
+| ----------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `WHISPER_CPP_BIN`             | `/opt/homebrew/bin/whisper-cli`      | whisper.cpp binary                                                                                                            |
+| `WHISPER_CPP_MODEL`           | _(unset → fetched from HF)_          | local path to a `ggml-*.bin`; pins a specific file. Unset = auto-download via `internal/hfcache` and cache on disk.            |
+| `XDG_CACHE_HOME`              | `~/.cache`                           | base for the HF cache (`<root>/transcriber/hf/<repo>/<file>`).                                                                 |
+| `FASTER_WHISPER_BIN`          | `/usr/local/bin/whisper-ctranslate2` | faster-whisper CLI                                                                                                            |
+| `FASTER_WHISPER_COMPUTE_TYPE` | `float16`                            | float16 / int8_float16 / int8 / ...                                                                                           |
+| `FASTER_WHISPER_DEVICE`       | `cuda`                               | cuda / cpu / auto                                                                                                             |
+| `NB_WHISPER_MODEL`            | `NbAiLab/nb-whisper-large`           | model string passed to `whisper-ctranslate2 --model` for the `nb-whisper-large` adapter (HF CT2 repo or local path).          |
 
 ## API
 

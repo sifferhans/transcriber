@@ -56,20 +56,40 @@ type Transcriber interface {
 
 type Registry struct {
 	adapters map[string]Transcriber
+	aliases  map[string]string // alternate ID -> canonical adapter ID
 	def      string
 }
 
 func NewRegistry(defaultID string) *Registry {
-	return &Registry{adapters: map[string]Transcriber{}, def: defaultID}
+	return &Registry{
+		adapters: map[string]Transcriber{},
+		aliases:  map[string]string{},
+		def:      defaultID,
+	}
 }
 
 func (r *Registry) Register(t Transcriber) {
 	r.adapters[t.ID()] = t
 }
 
+// Alias makes `from` resolve to the same adapter as `to`. Used to accept
+// legacy model IDs (e.g. "openai/whisper-large-v3") that the caller still
+// sends but which aren't registered as first-class adapter IDs. Aliases
+// don't appear in List() — the canonical IDs are the source of truth.
+func (r *Registry) Alias(from, to string) {
+	r.aliases[from] = to
+}
+
 func (r *Registry) Get(id string) (Transcriber, bool) {
-	t, ok := r.adapters[id]
-	return t, ok
+	if t, ok := r.adapters[id]; ok {
+		return t, true
+	}
+	if target, ok := r.aliases[id]; ok {
+		if t, ok := r.adapters[target]; ok {
+			return t, true
+		}
+	}
+	return nil, false
 }
 
 func (r *Registry) Default() (Transcriber, bool) {

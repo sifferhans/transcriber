@@ -69,15 +69,13 @@ async function onCancel(e: Event) {
                 <DesignButton
                     v-if="canCancel"
                     variant="tertiary"
-                    size="small"
                     :loading="canceling"
                     title="Cancel job"
                     aria-label="Cancel job"
                     class="text-text-hint hover:text-semantic-error!"
+                    icon="tabler:circle-x"
                     @click="onCancel"
-                >
-                    <Icon v-if="!canceling" name="tabler:circle-x" size="20" />
-                </DesignButton>
+                />
             </div>
         </div>
     </NuxtLink>

@@ -21,10 +21,18 @@ import (
 )
 
 type Config struct {
-	ID        string
-	Binary    string
+	ID     string
+	Binary string
+	// ModelFile is a local path to the ggml model file. If set, it wins over
+	// ResolveModel — useful for operator-pinned deployments and tests.
 	ModelFile string
-	Threads   int
+	// ResolveModel is called on first Transcribe when ModelFile is empty.
+	// Typically wired to hfcache.Cache.Get so the model is downloaded from
+	// Hugging Face on demand and cached on disk. Keeping this as a hook
+	// (rather than a direct hfcache dep) decouples the adapter from any
+	// specific resolver and keeps tests cheap.
+	ResolveModel func(ctx context.Context) (string, error)
+	Threads      int
 }
 
 type Adapter struct {
@@ -56,8 +64,16 @@ func (a *Adapter) Transcribe(ctx context.Context, req transcriber.Request, onPro
 	if a.cfg.Binary == "" {
 		return nil, fmt.Errorf("whispercpp: binary not configured")
 	}
-	if a.cfg.ModelFile == "" {
-		return nil, fmt.Errorf("whispercpp: model_file not configured")
+	modelPath := a.cfg.ModelFile
+	if modelPath == "" {
+		if a.cfg.ResolveModel == nil {
+			return nil, fmt.Errorf("whispercpp: no model_file and no resolver configured")
+		}
+		p, err := a.cfg.ResolveModel(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("whispercpp resolve model: %w", err)
+		}
+		modelPath = p
 	}
 	if err := os.MkdirAll(req.OutputDir, 0o755); err != nil {
 		return nil, err
@@ -65,7 +81,7 @@ func (a *Adapter) Transcribe(ctx context.Context, req transcriber.Request, onPro
 	outPrefix := filepath.Join(req.OutputDir, "whispercpp_out")
 
 	args := []string{
-		"-m", a.cfg.ModelFile,
+		"-m", modelPath,
 		"-f", req.InputPath,
 		"-of", outPrefix,
 		"-ojf",
