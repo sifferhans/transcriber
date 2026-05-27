@@ -16,8 +16,15 @@ internal/worker/        worker goroutine pool
 internal/transcriber/   adapter interface
   ├─ stub/              fake adapter for local dev / tests
   ├─ whispercpp/        shells out to whisper.cpp CLI
-  └─ fasterwhisper/     shells out to whisper-ctranslate2
+  ├─ fasterwhisper/     shells out to whisper-ctranslate2
+  └─ chunked/           wrapper that splits long-form audio into
+                        overlapping chunks (ffmpeg/ffprobe), transcribes
+                        each via an inner adapter, and stitches results
+                        back into one timeline
 internal/formats/       json / srt / vtt / txt writers
+                        testdata/golden/ — snapshot fixtures shared by
+                        format and adapter parser tests as the
+                        cross-adapter output contract
 internal/callback/      goroutine pool that POSTs webhooks
 internal/web/           embedded SPA (//go:embed dist/* + SPA fallback)
 frontend/               Nuxt 4 SPA (ssr: false) — pnpm generate output
@@ -49,6 +56,11 @@ installed. `internal/web/dist/` must be populated before the Go side will
 compile (the `//go:embed` directive needs at least one file) — run
 `make frontend` once after cloning, then `go run ./cmd/transcriber` works
 on its own for API-only iteration.
+
+The real adapters (`whisper-cpp-*`, `faster-whisper-*`) require **ffmpeg**
+and **ffprobe** on `$PATH`: the chunked wrapper uses ffprobe to read the
+input duration and ffmpeg to extract each chunk to a 16kHz mono wav. The
+`stub` adapter has no external dependencies.
 
 ## Configuration
 
@@ -95,6 +107,13 @@ Returns the current job state. `status` is one of `PENDING`, `RUNNING`,
 `COMPLETED`, `FAILED`, `CANCELED`. `progress` is 0–100. `result` is the
 path to `transcript.json` once `COMPLETED`.
 
+The JSON result includes word-level timestamps. Each segment carries a
+`words` array (`text` / `start` / `end`) in addition to the segment-level
+`text`/`start`/`end`. See
+`internal/formats/testdata/golden/transcript.json` for the canonical
+shape — this fixture is the source of truth that every adapter must
+serialize to.
+
 ### Additive endpoints
 
 - `GET  /transcription/jobs` — list all jobs
@@ -109,3 +128,12 @@ path to `transcript.json` once `COMPLETED`.
    the adapter's typed `Config`. Use a distinct ID per variant
    (e.g. `whisper-cpp-large-v3`, `whisper-cpp-medium`) so callers can A/B
    test by passing `"model": "..."` in the request body.
+3. Wrap the adapter in `chunked.New(inner, chunked.Config{})` at
+   registration time if it should handle long-form audio — the wrapper
+   passes short files (≤ `ChunkLengthSec`, default 5 min) through
+   unchanged and chunks longer files transparently.
+4. Add a `testdata/raw.json` fixture and a parser test in the adapter
+   package that round-trips the parsed `Transcription` through
+   `formats.Write` and byte-compares each output against
+   `internal/formats/testdata/golden/transcript.<ext>`. This is the
+   contract every adapter is held to.
