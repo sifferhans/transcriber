@@ -84,8 +84,7 @@ func TestBuildCues_NoWordsFallsBackToSegment(t *testing.T) {
 }
 
 func TestBuildCues_AvoidsOrphanWithClauseBreak(t *testing.T) {
-	// "aaa bbb ccc, ddd eee fff ggg hhh" — fits in 2 lines × 13 chars only if we
-	// break after the comma. The tail "hhh" alone would otherwise be an orphan.
+	// Without the clause break, "hhh" would dangle as a single-word cue.
 	tr := &transcriber.Transcription{Segments: []transcriber.Segment{{
 		Start: 0, End: 8,
 		Words: words(
@@ -111,8 +110,7 @@ func TestBuildCues_AvoidsOrphanWithClauseBreak(t *testing.T) {
 }
 
 func TestBuildCues_BalancedTwoLineSplit(t *testing.T) {
-	// Greedy fill would put "Goodbye." on its own short line; balanced wrap
-	// distributes words more evenly across the two lines.
+	// Greedy fill would leave a short tail line; balanced wrap distributes evenly.
 	tr := &transcriber.Transcription{Segments: []transcriber.Segment{{
 		Start: 0, End: 6,
 		Words: words(
@@ -132,6 +130,40 @@ func TestBuildCues_BalancedTwoLineSplit(t *testing.T) {
 	}}
 	if !reflect.DeepEqual(cues, want) {
 		t.Errorf("got %+v, want %+v", cues, want)
+	}
+}
+
+func TestBuildCues_BreaksAtSentenceEndNotAbbreviation(t *testing.T) {
+	// "2016." is a real sentence end; "J." is an abbreviation. The cue
+	// boundary should land at the former, not the latter.
+	tr := &transcriber.Transcription{Segments: []transcriber.Segment{{
+		Start: 0, End: 10,
+		Words: words(
+			wordSpec{"Det", 0, 0.2},
+			wordSpec{"er", 0.2, 0.4},
+			wordSpec{"blitt", 0.4, 0.8},
+			wordSpec{"torsdag", 0.8, 1.2},
+			wordSpec{"15.12.2016.", 1.2, 3.0},
+			wordSpec{"Aksel", 3.0, 3.3},
+			wordSpec{"J.", 3.3, 3.5},
+			wordSpec{"Smith", 3.5, 3.9},
+			wordSpec{"skriver", 3.9, 4.4},
+			wordSpec{"i", 4.4, 4.5},
+			wordSpec{"Skjulte", 4.5, 4.9},
+			wordSpec{"skatter", 4.9, 5.4},
+			wordSpec{"i", 5.4, 5.5},
+			wordSpec{"november", 5.5, 6.0},
+			wordSpec{"1978:", 6.0, 6.5},
+		),
+	}}}
+
+	cues := BuildCues(tr, SubtitleOptions{})
+	if len(cues) < 2 {
+		t.Fatalf("got %d cues, want at least 2: %+v", len(cues), cues)
+	}
+	wantFirst := "Det er blitt torsdag 15.12.2016."
+	if cues[0].Lines[0] != wantFirst {
+		t.Errorf("cue 0 line 0 = %q, want %q (cue contents: %+v)", cues[0].Lines[0], wantFirst, cues[0].Lines)
 	}
 }
 

@@ -7,8 +7,8 @@ import (
 	"transcriber/internal/transcriber"
 )
 
-// SubtitleOptions controls how segments are split into broadcast-grade cues.
-// Zero values fall back to broadcast defaults (≤42 chars, ≤2 lines).
+// SubtitleOptions tunes cue splitting; zero values use broadcast defaults
+// (≤42 chars, ≤2 lines).
 type SubtitleOptions struct {
 	MaxCharsPerLine int `json:"max_chars_per_line,omitempty"`
 	MaxLinesPerCue  int `json:"max_lines_per_cue,omitempty"`
@@ -24,7 +24,6 @@ func (o SubtitleOptions) normalized() SubtitleOptions {
 	return o
 }
 
-// Cue is a single subtitle event ready for an SRT/VTT writer.
 type Cue struct {
 	Start float64
 	End   float64
@@ -36,8 +35,8 @@ type cueWord struct {
 	start, end float64
 }
 
-// BuildCues splits each segment into cues using word timestamps. Segments
-// without words fall back to a single cue per segment.
+// BuildCues splits segments into cues using word timestamps; segments
+// without words emit one cue each.
 func BuildCues(t *transcriber.Transcription, opts SubtitleOptions) []Cue {
 	opts = opts.normalized()
 
@@ -72,7 +71,6 @@ func splitSegment(seg transcriber.Segment, opts SubtitleOptions) []Cue {
 	var cues []Cue
 	i := 0
 	for i < len(ws) {
-		// Greedy: find the largest j such that ws[i:j+1] still fits the cue.
 		maxJ := i
 		for j := i; j < len(ws); j++ {
 			if tryWrap(ws[i:j+1], opts.MaxLinesPerCue, opts.MaxCharsPerLine) != nil {
@@ -83,14 +81,15 @@ func splitSegment(seg transcriber.Segment, opts SubtitleOptions) []Cue {
 		}
 		end := maxJ
 
-		// If the remaining tail would be an orphan fragment, back off to the
-		// last natural break (sentence end, then clause break) within the cue.
-		// Skip if doing so leaves the current cue too small.
-		if maxJ+1 < len(ws) && isOrphan(ws[maxJ+1:]) {
+		// Prefer breaking at a sentence end; if none, fall back to clause
+		// only when the tail would orphan. Either path keeps the cue substantial.
+		if maxJ+1 < len(ws) {
 			if k := lastTerminalIdx(ws[i : maxJ+1]); k > 0 && cueSubstantial(ws[i:i+k+1]) {
 				end = i + k
-			} else if k := lastClauseIdx(ws[i : maxJ+1]); k > 0 && cueSubstantial(ws[i:i+k+1]) {
-				end = i + k
+			} else if isOrphan(ws[maxJ+1:]) {
+				if k := lastClauseIdx(ws[i : maxJ+1]); k > 0 && cueSubstantial(ws[i:i+k+1]) {
+					end = i + k
+				}
 			}
 		}
 
@@ -105,8 +104,8 @@ func splitSegment(seg transcriber.Segment, opts SubtitleOptions) []Cue {
 	return cues
 }
 
-// tryWrap returns lines if the words fit within maxLines × maxChars; otherwise
-// nil. Lines containing a single word are allowed to overflow maxChars.
+// tryWrap returns wrapped lines or nil if the words don't fit. Single-word
+// lines may exceed maxChars (no way to break a single word cleanly).
 func tryWrap(words []cueWord, maxLines, maxChars int) []string {
 	if len(words) == 0 {
 		return nil
@@ -129,9 +128,8 @@ func tryWrap(words []cueWord, maxLines, maxChars int) []string {
 	return nil
 }
 
-// tryWrapTwoLines finds the most balanced 2-line split where both lines fit
-// in maxChars (single-word lines may overflow). Breaks after sentence-ending
-// or clause-ending punctuation are preferred. Returns nil if no split fits.
+// tryWrapTwoLines picks the most balanced 2-line split, biased toward
+// punctuation breaks. Returns nil if no split fits.
 func tryWrapTwoLines(words []cueWord, maxChars int) []string {
 	bestI := -1
 	bestScore := math.MaxInt
@@ -145,10 +143,10 @@ func tryWrapTwoLines(words []cueWord, maxChars int) []string {
 			continue
 		}
 		score := abs(len(l1) - len(l2))
-		switch lastRune(words[i-1].text) {
-		case '.', '!', '?':
+		switch {
+		case endsWithSentenceEnd(words[i-1].text):
 			score -= 200
-		case ',', ';', ':':
+		case endsWithClauseEnd(words[i-1].text):
 			score -= 100
 		}
 		if score < bestScore {
@@ -162,8 +160,6 @@ func tryWrapTwoLines(words []cueWord, maxChars int) []string {
 	return []string{joinWords(words[:bestI]), joinWords(words[bestI:])}
 }
 
-// wrapCue produces the final lines for a cue. Falls back to greedy wrap if a
-// balanced layout isn't found.
 func wrapCue(words []cueWord, maxLines, maxChars int) []string {
 	if lines := tryWrap(words, maxLines, maxChars); lines != nil {
 		return lines
@@ -171,7 +167,6 @@ func wrapCue(words []cueWord, maxLines, maxChars int) []string {
 	return greedyWrap(words, maxChars)
 }
 
-// greedyWrap fills each line up to maxChars left-to-right.
 func greedyWrap(words []cueWord, maxChars int) []string {
 	var lines []string
 	var cur string
@@ -219,8 +214,7 @@ func cueSubstantial(words []cueWord) bool {
 
 func lastTerminalIdx(words []cueWord) int {
 	for i := len(words) - 2; i >= 0; i-- {
-		switch lastRune(words[i].text) {
-		case '.', '!', '?':
+		if endsWithSentenceEnd(words[i].text) {
 			return i
 		}
 	}
@@ -229,20 +223,56 @@ func lastTerminalIdx(words []cueWord) int {
 
 func lastClauseIdx(words []cueWord) int {
 	for i := len(words) - 2; i >= 0; i-- {
-		switch lastRune(words[i].text) {
-		case ',', ';', ':':
+		if endsWithClauseEnd(words[i].text) {
 			return i
 		}
 	}
 	return -1
 }
 
-func lastRune(s string) rune {
+// endsWithSentenceEnd ignores 1–2 letter abbreviation periods ("J.", "Mr.")
+// so they don't get treated as sentence boundaries.
+func endsWithSentenceEnd(s string) bool {
 	if s == "" {
-		return 0
+		return false
 	}
 	rs := []rune(s)
-	return rs[len(rs)-1]
+	switch rs[len(rs)-1] {
+	case '!', '?':
+		return true
+	case '.':
+		body := rs[:len(rs)-1]
+		if len(body) > 0 && len(body) <= 2 && allLetters(body) {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
+func endsWithClauseEnd(s string) bool {
+	if s == "" {
+		return false
+	}
+	rs := []rune(s)
+	switch rs[len(rs)-1] {
+	case ',', ';', ':':
+		return true
+	}
+	return false
+}
+
+func allLetters(rs []rune) bool {
+	for _, r := range rs {
+		switch {
+		case 'a' <= r && r <= 'z':
+		case 'A' <= r && r <= 'Z':
+		case r >= 0x80: // non-ASCII letters (å, ø, etc.)
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func joinWords(words []cueWord) string {
