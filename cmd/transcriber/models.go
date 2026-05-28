@@ -18,6 +18,10 @@ func buildRegistry(defaultID string) *transcriber.Registry {
 
 	cache := hfcache.Default()
 	whisperBin := envOr("WHISPER_CPP_BIN", "/opt/homebrew/bin/whisper-cli")
+	vadModelFile := os.Getenv("WHISPER_VAD_MODEL")
+	resolveVAD := func(ctx context.Context) (string, error) {
+		return cache.Get(ctx, "ggml-org/whisper-vad", "ggml-silero-v5.1.2.bin")
+	}
 
 	r.Register(chunked.New(
 		whispercpp.New(whispercpp.Config{
@@ -28,7 +32,10 @@ func buildRegistry(defaultID string) *transcriber.Registry {
 			ResolveModel: func(ctx context.Context) (string, error) {
 				return cache.Get(ctx, "ggerganov/whisper.cpp", "ggml-large-v3.bin")
 			},
-			Threads: 8,
+			Threads:         8,
+			DTWPreset:       "large.v3",
+			VADModelFile:    vadModelFile,
+			ResolveVADModel: resolveVAD,
 		}),
 		chunked.Config{},
 	))
@@ -42,7 +49,10 @@ func buildRegistry(defaultID string) *transcriber.Registry {
 			ResolveModel: func(ctx context.Context) (string, error) {
 				return cache.Get(ctx, "NbAiLab/nb-whisper-large", "ggml-model.bin")
 			},
-			Threads: 8,
+			Threads:         8,
+			DTWPreset:       "large.v3",
+			VADModelFile:    vadModelFile,
+			ResolveVADModel: resolveVAD,
 		}),
 		chunked.Config{},
 	))

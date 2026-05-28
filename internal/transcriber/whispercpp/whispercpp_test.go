@@ -67,14 +67,48 @@ func TestParseJSONLanguageFallback(t *testing.T) {
 }
 
 func TestTokensToWordsEmpty(t *testing.T) {
-	if got := tokensToWords(nil); got != nil {
+	if got := tokensToWords(nil, 0, 0); got != nil {
 		t.Errorf("tokensToWords(nil) = %v, want nil", got)
 	}
 }
 
-// Whisper.cpp BPE splits "å" into two byte-level tokens (0xC3 and 0xA5).
-// Each byte is invalid UTF-8 on its own; rawString must preserve the raw
-// bytes so concatenation reconstitutes the codepoint.
+// With VAD on, segment offsets are in original-audio time but token offsets
+// are in VAD-compressed time. tokensToWords must remap them.
+func TestTokensToWordsRemapsVADCompressedOffsets(t *testing.T) {
+	mkTok := func(text string, fromMS, toMS int) rawToken {
+		return rawToken{Text: rawString(text), ID: 1, Offsets: struct {
+			From int `json:"from"`
+			To   int `json:"to"`
+		}{From: fromMS, To: toMS}}
+	}
+	// Segment 19.65–23.05 (original); first content token at 30ms (VAD).
+	tokens := []rawToken{
+		mkTok("[_BEG_]", 0, 0),
+		mkTok(" Det", 30, 200),
+		mkTok(" er", 200, 350),
+		mkTok(" blitt", 350, 700),
+	}
+	tokens[0].ID = firstSpecialTokenID + 1 // skip the special begin token
+	words := tokensToWords(tokens, 19.65, 23.05)
+	if len(words) != 3 {
+		t.Fatalf("words = %d, want 3 (%+v)", len(words), words)
+	}
+	// delta = 19.65 - 0.030 = 19.62; applied to every token.
+	const eps = 0.001
+	approx := func(a, b float64) bool { return a-b < eps && b-a < eps }
+	if !approx(words[0].Start, 19.65) {
+		t.Errorf("words[0].Start = %.3f, want 19.650", words[0].Start)
+	}
+	if !approx(words[1].Start, 19.82) {
+		t.Errorf("words[1].Start = %.3f, want 19.820 (0.200 + 19.62)", words[1].Start)
+	}
+	if !approx(words[2].End, 20.32) {
+		t.Errorf("words[2].End = %.3f, want 20.320 (0.700 + 19.62)", words[2].End)
+	}
+}
+
+// BPE may split a codepoint across tokens ("å" = 0xC3 0xA5); rawString
+// must keep the raw bytes so concatenation reassembles it.
 func TestParseJSONReconstructsSplitUTF8Tokens(t *testing.T) {
 	raw := []byte("{" +
 		"\"result\":{\"language\":\"no\"}," +

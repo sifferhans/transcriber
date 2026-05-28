@@ -29,6 +29,15 @@ type Config struct {
 	ModelFile    string
 	ResolveModel func(ctx context.Context) (string, error)
 	Threads      int
+
+	// DTWPreset (e.g. "large.v3") aligns per-token timestamps to the audio;
+	// without it, timestamps drift across long segments.
+	DTWPreset string
+
+	// VAD pre-pass; whisper only sees detected speech, avoiding hallucinated
+	// timestamps over music/silence. VADModelFile wins over ResolveVADModel.
+	VADModelFile    string
+	ResolveVADModel func(ctx context.Context) (string, error)
 }
 
 type Adapter struct {
@@ -92,6 +101,20 @@ func (a *Adapter) Transcribe(ctx context.Context, req transcriber.Request, onPro
 	}
 	if req.Prompt != "" {
 		args = append(args, "--prompt", req.Prompt)
+	}
+	if a.cfg.DTWPreset != "" {
+		args = append(args, "-dtw", a.cfg.DTWPreset)
+	}
+	vadPath := a.cfg.VADModelFile
+	if vadPath == "" && a.cfg.ResolveVADModel != nil {
+		p, err := a.cfg.ResolveVADModel(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("whispercpp resolve VAD model: %w", err)
+		}
+		vadPath = p
+	}
+	if vadPath != "" {
+		args = append(args, "--vad", "--vad-model", vadPath)
 	}
 
 	start := time.Now()
@@ -202,12 +225,10 @@ type rawToken struct {
 	ID int `json:"id"`
 }
 
-// rawString preserves the raw bytes of a JSON string. The standard
-// json.Unmarshal substitutes invalid UTF-8 with U+FFFD, which destroys
-// information; whisper.cpp BPE tokens routinely split a multi-byte
-// codepoint (e.g. "å" = 0xC3 0xA5) across two tokens, so each side has
-// an invalid byte on its own. Keeping the raw bytes lets the bytes
-// reconstitute when adjacent tokens are concatenated.
+// rawString keeps raw bytes through JSON decode. Whisper.cpp BPE tokens
+// often split a multi-byte codepoint (e.g. "å" = 0xC3 0xA5) across two
+// tokens; the stdlib decoder replaces each lone byte with U+FFFD, which
+// is unrecoverable. Raw bytes survive concatenation.
 type rawString string
 
 func (r *rawString) UnmarshalJSON(data []byte) error {
@@ -318,12 +339,14 @@ func parseJSON(data []byte, fallbackLang string) (*transcriber.Transcription, er
 	var sb strings.Builder
 	for i, s := range raw.Transcription {
 		text := strings.TrimSpace(s.Text)
+		segStart := float64(s.Offsets.From) / 1000.0
+		segEnd := float64(s.Offsets.To) / 1000.0
 		t.Segments = append(t.Segments, transcriber.Segment{
 			ID:    i,
-			Start: float64(s.Offsets.From) / 1000.0,
-			End:   float64(s.Offsets.To) / 1000.0,
+			Start: segStart,
+			End:   segEnd,
 			Text:  text,
-			Words: tokensToWords(s.Tokens),
+			Words: tokensToWords(s.Tokens, segStart, segEnd),
 		})
 		sb.WriteString(text)
 		sb.WriteByte(' ')
@@ -332,10 +355,35 @@ func parseJSON(data []byte, fallbackLang string) (*transcriber.Transcription, er
 	return t, nil
 }
 
-// tokensToWords groups BPE tokens into words; a leading space starts a new word.
-func tokensToWords(tokens []rawToken) []transcriber.Word {
+// tokensToWords groups BPE tokens into words (leading space marks a new word)
+// and remaps timestamps. With VAD on, token offsets are in VAD-compressed
+// time while segment offsets are in original time — we anchor the first
+// token to segStart and apply the same delta to the rest.
+func tokensToWords(tokens []rawToken, segStart, segEnd float64) []transcriber.Word {
 	if len(tokens) == 0 {
 		return nil
+	}
+	delta := 0.0
+	foundFirst := false
+	for _, tok := range tokens {
+		if tok.ID >= firstSpecialTokenID {
+			continue
+		}
+		delta = segStart - float64(tok.Offsets.From)/1000.0
+		foundFirst = true
+		break
+	}
+	if !foundFirst {
+		return nil
+	}
+	clamp := func(t float64) float64 {
+		if t < segStart {
+			return segStart
+		}
+		if t > segEnd {
+			return segEnd
+		}
+		return t
 	}
 	var words []transcriber.Word
 	var cur *transcriber.Word
@@ -357,12 +405,12 @@ func tokensToWords(tokens []rawToken) []transcriber.Word {
 		startsWord := cur == nil || strings.HasPrefix(text, " ")
 		if startsWord {
 			flush()
-			start := float64(tok.Offsets.From) / 1000.0
-			end := float64(tok.Offsets.To) / 1000.0
+			start := clamp(float64(tok.Offsets.From)/1000.0 + delta)
+			end := clamp(float64(tok.Offsets.To)/1000.0 + delta)
 			cur = &transcriber.Word{Text: text, Start: start, End: end}
 		} else {
 			cur.Text += text
-			if end := float64(tok.Offsets.To) / 1000.0; end > cur.End {
+			if end := clamp(float64(tok.Offsets.To)/1000.0 + delta); end > cur.End {
 				cur.End = end
 			}
 		}
