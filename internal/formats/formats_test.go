@@ -69,7 +69,7 @@ func TestWriteMatchesGolden(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			tmp := t.TempDir()
-			path, err := formats.Write(tc.format, tr, tmp, "transcript")
+			path, err := formats.Write(tc.format, tr, tmp, "transcript", formats.SubtitleOptions{})
 			if err != nil {
 				t.Fatalf("Write(%s): %v", tc.format, err)
 			}

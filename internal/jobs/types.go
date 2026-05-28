@@ -1,6 +1,10 @@
 package jobs
 
-import "time"
+import (
+	"time"
+
+	"transcriber/internal/formats"
+)
 
 const (
 	StatusPending   = "QUEUED"
@@ -20,6 +24,7 @@ type Job struct {
 	Callback   string
 	Model      string
 	Prompt     string
+	Subtitle   formats.SubtitleOptions
 
 	Status   string
 	Progress int

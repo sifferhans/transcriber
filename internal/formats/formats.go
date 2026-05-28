@@ -41,7 +41,8 @@ func Parse(spec string) []string {
 }
 
 // Write serializes the transcription to outDir/<basename>.<format>.
-func Write(format string, t *transcriber.Transcription, outDir, basename string) (string, error) {
+// SubtitleOptions tunes SRT/VTT cue splitting; zero values use broadcast defaults.
+func Write(format string, t *transcriber.Transcription, outDir, basename string, opts SubtitleOptions) (string, error) {
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return "", err
 	}
@@ -56,9 +57,9 @@ func Write(format string, t *transcriber.Transcription, outDir, basename string)
 			body = append(body, '\n')
 		}
 	case SRT:
-		body = []byte(toSRT(t))
+		body = []byte(toSRT(t, opts))
 	case VTT:
-		body = []byte(toVTT(t))
+		body = []byte(toVTT(t, opts))
 	case TXT:
 		body = []byte(strings.TrimSpace(t.Text) + "\n")
 	case WordsSRT:
@@ -76,14 +77,14 @@ func Write(format string, t *transcriber.Transcription, outDir, basename string)
 	return path, nil
 }
 
-func toSRT(t *transcriber.Transcription) string {
+func toSRT(t *transcriber.Transcription, opts SubtitleOptions) string {
 	var sb strings.Builder
-	for i, seg := range t.Segments {
+	for i, cue := range BuildCues(t, opts) {
 		fmt.Fprintf(&sb, "%d\n%s --> %s\n%s\n\n",
 			i+1,
-			srtTime(seg.Start),
-			srtTime(seg.End),
-			strings.TrimSpace(seg.Text),
+			srtTime(cue.Start),
+			srtTime(cue.End),
+			strings.Join(cue.Lines, "\n"),
 		)
 	}
 	return sb.String()
@@ -106,14 +107,14 @@ func toWordsSRT(t *transcriber.Transcription) string {
 	return sb.String()
 }
 
-func toVTT(t *transcriber.Transcription) string {
+func toVTT(t *transcriber.Transcription, opts SubtitleOptions) string {
 	var sb strings.Builder
 	sb.WriteString("WEBVTT\n\n")
-	for _, seg := range t.Segments {
+	for _, cue := range BuildCues(t, opts) {
 		fmt.Fprintf(&sb, "%s --> %s\n%s\n\n",
-			vttTime(seg.Start),
-			vttTime(seg.End),
-			strings.TrimSpace(seg.Text),
+			vttTime(cue.Start),
+			vttTime(cue.End),
+			strings.Join(cue.Lines, "\n"),
 		)
 	}
 	return sb.String()

@@ -131,7 +131,7 @@ func (p *Pool) runJob(parent context.Context, id string, log *slog.Logger) {
 	primary := ""
 	written := make([]string, 0, len(wantFormats))
 	for _, f := range wantFormats {
-		path, err := formats.Write(f, res.Transcription, job.OutputPath, basename)
+		path, err := formats.Write(f, res.Transcription, job.OutputPath, basename, job.Subtitle)
 		if err != nil {
 			p.markFailed(id, fmt.Errorf("write %s: %w", f, err))
 			p.fireCallback(id)

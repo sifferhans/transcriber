@@ -90,6 +90,9 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 		Status:     jobs.StatusPending,
 		CreatedAt:  now,
 	}
+	if in.SubtitleOptions != nil {
+		job.Subtitle = *in.SubtitleOptions
+	}
 	s.store.Create(job)
 	s.queue.Push(job.ID, job.Priority, job.CreatedAt)
 

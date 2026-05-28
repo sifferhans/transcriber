@@ -47,21 +47,6 @@ wants.
 
 Once these land, the box is stateless from the caller's perspective.
 
-## Subtitle line splitting (SRT/VTT)
-
-The current SRT/VTT writers emit one cue per Whisper segment, which is
-sentence-sized. Real VOD subtitles need cues of ≤42 chars, ≤2 lines, ≤6s.
-Use the word timestamps to split each segment cleanly:
-
-- Greedy fill: pack words into the current line until adding the next word
-  would exceed `max_chars_per_line`; break, add a `\n`, fill again; flush
-  the cue when `max_lines_per_cue` or `max_cue_duration_ms` is reached.
-- Snap line breaks to whitespace; never split mid-word.
-- A `subtitle_options` field on the job request lets the workflow tune
-  the rules per call without a server redeploy.
-
-This is the single highest-leverage output change for VOD use.
-
 ## Webhook signing + richer payload
 
 `internal/callback` fires on status changes but the payload isn't signed
@@ -79,17 +64,6 @@ and is fairly bare. For pipeline integration:
 API-first means a published contract. Generate `openapi.yaml` from the
 handlers (or hand-write, the surface is small) and serve it at
 `/openapi.yaml`. Use it to generate a typed client for the caller.
-
-## Initial prompt / custom vocabulary
-
-Whisper supports an `--initial_prompt` that biases the decoder toward
-specific terminology. For domain content (proper nouns, theology terms in
-the church-gathering corpus, brand names, host names on a recurring
-podcast) this is a one-line CLI flag with a noticeable quality win.
-
-Add an `initial_prompt` field to the job request and forward it to the
-whisper.cpp adapter. A server-side default (flag or env var) is a cheap
-extension that lets the caller stay terse on the request side.
 
 ## Forced alignment mode
 
