@@ -43,12 +43,12 @@ has no external dependencies.
 The set of registered models lives in `cmd/transcriber/models.go` as typed
 Go code. Server settings come from flags; per-machine paths from env vars.
 
-| Flag                | Default | Meaning                                        |
-| ------------------- | ------- | ---------------------------------------------- |
-| `-port`             | `8888`  | HTTP listen port                               |
-| `-workers`          | `2`     | concurrent transcription jobs                  |
-| `-callback-workers` | `2`     | webhook delivery goroutines                    |
-| `-default-model`    | `stub`  | adapter ID used when the request omits `model` |
+| Flag                   | Default      | Meaning                                                                                                                                                  |
+| ---------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-port`                | `8888`       | HTTP listen port                                                                                                                                         |
+| `-workers`             | `2`          | concurrent transcription jobs                                                                                                                            |
+| `-callback-workers`    | `2`          | webhook delivery goroutines                                                                                                                              |
+| `-default-model`       | `stub`       | adapter ID used when the request omits `model`                                                                                                           |
 | `-default-prompt-file` | `prompt.txt` | file whose contents are used as the prompt when the request omits one; missing file = no default. A non-empty `prompt` in the request fully overrides it |
 
 | Env var             | Default                         | Meaning                                                                                                                                             |
@@ -56,6 +56,7 @@ Go code. Server settings come from flags; per-machine paths from env vars.
 | `WHISPER_CPP_BIN`   | `/opt/homebrew/bin/whisper-cli` | whisper.cpp binary                                                                                                                                  |
 | `WHISPER_CPP_MODEL` | _(unset → fetched from HF)_     | local path override for the `whisper-cpp-large-v3` adapter. Unset = auto-download `ggerganov/whisper.cpp/ggml-large-v3.bin` via `internal/hfcache`. |
 | `NB_WHISPER_MODEL`  | _(unset → fetched from HF)_     | local path override for the `nb-whisper-large` adapter. Unset = auto-download `NbAiLab/nb-whisper-large/ggml-model.bin` via `internal/hfcache`.     |
+| `WHISPER_VAD_MODEL` | _(unset → fetched from HF)_     | local path override for the Silero VAD model used to skip music/silence. Unset = auto-download `ggml-org/whisper-vad/ggml-silero-v5.1.2.bin`.       |
 | `XDG_CACHE_HOME`    | `~/.cache`                      | base for the HF cache (`<root>/transcriber/hf/<repo>/<file>`).                                                                                      |
 
 ## API

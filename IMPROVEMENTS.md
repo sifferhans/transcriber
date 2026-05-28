@@ -73,6 +73,7 @@ with zero transcription errors. This is the killer feature for production
 subtitle workflows.
 
 Implementation options:
+
 - Wrap WhisperX or stable-ts as a third adapter (`task=align`); request
   takes `audio` + `transcript`, returns word-level timestamps for the
   provided text.
@@ -119,7 +120,7 @@ For operability without poking the API:
 Right now each adapter does its own decoding. Centralize a preprocessing
 step: normalize loudness, downmix to mono, resample to 16kHz, optional
 silence trim. Adapters then receive a known-good wav and never see raw
-mp3/m4a/etc. Also makes the chunked extractor's output the *only* shape
+mp3/m4a/etc. Also makes the chunked extractor's output the _only_ shape
 adapters need to support.
 
 ## Parallel chunk transcription
@@ -138,37 +139,13 @@ that's a meaningful tax. Long-running per-model worker processes (whisper.cpp
 ships a `server` binary; faster-whisper can wrap in a Python sidecar)
 amortize the load cost across all chunks of a job and across jobs.
 
-## Word-level timestamp accuracy via DTW (whisper.cpp adapter)
+## Result-display duration cap
 
-Word timestamps from the whisper.cpp adapter currently come from each token's
-`offsets.from/to` in the `--output-json-full` output. These are derived from
-the decoder's per-step time anchors, which can be coarse: it's common to see
-several adjacent tokens share the same offset when the model emits them in a
-single inference step.
-
-whisper.cpp ships a more precise alternative: DTW (dynamic time warping) over
-the cross-attention weights, enabled via `-dtw <preset>` on `whisper-cli`. When
-enabled, each token gets a `t_dtw` value (milliseconds) that's typically
-sub-100ms accurate.
-
-To wire it up:
-
-1. Add a `DTWModel string` field to `whispercpp.Config` and append
-   `-dtw <DTWModel>` to the args in `Transcribe` when set.
-2. Surface it via env (e.g. `WHISPER_CPP_DTW`) in `cmd/transcriber/models.go`,
-   or derive the preset name from the model filename (`ggml-base.bin` →
-   `base`, `ggml-large-v3.bin` → `large.v3` — note: dots, not dashes).
-3. Update `tokensToWords` in `internal/transcriber/whispercpp/whispercpp.go`
-   to prefer `t_dtw` for the word's start when it's not `-1`, falling back to
-   `offsets.from` otherwise. End time can come from the next token's `t_dtw`
-   (or the segment end for the last token).
-
-Caveats:
-- The preset name must match the model being loaded, or alignment is garbage.
-- DTW adds a second pass over the attention weights — expect ~10–30% more
-  inference time per file.
-- Requires the model to have alignment heads. All official `ggml-*` Whisper
-  models do; custom fine-tunes may not.
-
-Worth doing if word timing drives UX (karaoke highlighting, click-to-seek on
-a word). Skippable if word timestamps are just metadata.
+We removed the broadcast 6-second cue cap because it fragmented sentences
+during slow speech (multi-second per-word durations turned single-line
+sentences into orphan cues). With VAD now stripping music/silence,
+per-word durations stay realistic, but a runaway holding cue can still
+occur — e.g. a sung line where the model emits one word with a 7-second
+duration. A _display-duration_ cap (cap how long any cue stays on screen,
+splitting greedily if needed) would catch these without re-introducing
+the old fragmentation. Not urgent; deferred until a real example bites.
