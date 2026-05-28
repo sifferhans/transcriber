@@ -4,6 +4,20 @@ import type { TranscribeJob } from "~/types/job";
 const { jobs, loading, error, fetchOnce } = useJobsList();
 const showForm = ref(false);
 
+const activeJobs = computed(() =>
+    jobs.value.filter(
+        (j) => j.status === "QUEUED" || j.status === "RUNNING",
+    ),
+);
+const recentJobs = computed(() =>
+    jobs.value.filter(
+        (j) =>
+            j.status === "COMPLETED" ||
+            j.status === "FAILED" ||
+            j.status === "CANCELED",
+    ),
+);
+
 async function onCreated(_job: TranscribeJob) {
     showForm.value = false;
     await fetchOnce();
@@ -15,7 +29,7 @@ async function onCreated(_job: TranscribeJob) {
         <DesignHeader>
             Transcription jobs
             <template #subtitle>
-                {{ jobs.length }} total
+                {{ activeJobs.length }} active · {{ recentJobs.length }} recent
                 <span v-if="loading" class="ml-2 text-text-hint"
                     >refreshing…</span
                 >
@@ -54,13 +68,47 @@ async function onCreated(_job: TranscribeJob) {
             class="py-16"
         />
 
-        <div v-else class="space-y-2">
-            <JobRow
-                v-for="j in jobs"
-                :key="j.id"
-                :job="j"
-                @cancel="fetchOnce"
-            />
+        <div v-else class="space-y-8">
+            <section>
+                <h2
+                    class="text-caption-1 font-medium text-text-muted uppercase tracking-wider mb-3"
+                >
+                    Active
+                    <span class="text-text-hint ml-1"
+                        >({{ activeJobs.length }})</span
+                    >
+                </h2>
+                <div v-if="activeJobs.length" class="space-y-2">
+                    <JobRow
+                        v-for="j in activeJobs"
+                        :key="j.id"
+                        :job="j"
+                        @cancel="fetchOnce"
+                    />
+                </div>
+                <p v-else class="text-body-3 text-text-hint italic">
+                    No active jobs.
+                </p>
+            </section>
+
+            <section v-if="recentJobs.length">
+                <h2
+                    class="text-caption-1 font-medium text-text-muted uppercase tracking-wider mb-3"
+                >
+                    Recent
+                    <span class="text-text-hint ml-1"
+                        >({{ recentJobs.length }})</span
+                    >
+                </h2>
+                <div class="space-y-2">
+                    <JobRow
+                        v-for="j in recentJobs"
+                        :key="j.id"
+                        :job="j"
+                        @cancel="fetchOnce"
+                    />
+                </div>
+            </section>
         </div>
     </div>
 </template>

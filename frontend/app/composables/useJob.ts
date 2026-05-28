@@ -17,7 +17,7 @@ export function useJob(id: MaybeRefOrGetter<string>) {
 
   const isActive = computed(() => {
     const s = job.value?.status;
-    return s === "PENDING" || s === "RUNNING";
+    return s === "QUEUED" || s === "RUNNING";
   });
 
   async function fetchOnce() {

@@ -7,16 +7,23 @@ import (
 )
 
 // Store is a goroutine-safe in-memory job store. Reads return copies.
+//
+// When maxTerminal > 0, jobs in a terminal status (completed/failed/canceled)
+// are capped at that count; oldest by EndedAt are evicted first. Active jobs
+// (queued/running) are never evicted.
 type Store struct {
-	mu      sync.RWMutex
-	jobs    map[string]*Job
-	cancels map[string]context.CancelFunc
+	mu          sync.RWMutex
+	jobs        map[string]*Job
+	cancels     map[string]context.CancelFunc
+	maxTerminal int
 }
 
-func NewStore() *Store {
+// NewStore creates a store. maxTerminal <= 0 disables eviction.
+func NewStore(maxTerminal int) *Store {
 	return &Store{
-		jobs:    map[string]*Job{},
-		cancels: map[string]context.CancelFunc{},
+		jobs:        map[string]*Job{},
+		cancels:     map[string]context.CancelFunc{},
+		maxTerminal: maxTerminal,
 	}
 }
 
@@ -25,6 +32,7 @@ func (s *Store) Create(j Job) {
 	defer s.mu.Unlock()
 	cp := j
 	s.jobs[j.ID] = &cp
+	s.evictTerminalLocked()
 }
 
 func (s *Store) Get(id string) (Job, bool) {
@@ -46,6 +54,7 @@ func (s *Store) Update(id string, fn func(*Job)) bool {
 		return false
 	}
 	fn(j)
+	s.evictTerminalLocked()
 	return true
 }
 
@@ -83,4 +92,30 @@ func (s *Store) Cancel(id string) bool {
 	}
 	cancel()
 	return true
+}
+
+func isTerminal(status string) bool {
+	return status == StatusCompleted || status == StatusFailed || status == StatusCanceled
+}
+
+func (s *Store) evictTerminalLocked() {
+	if s.maxTerminal <= 0 {
+		return
+	}
+	terminal := make([]*Job, 0, len(s.jobs))
+	for _, j := range s.jobs {
+		if isTerminal(j.Status) {
+			terminal = append(terminal, j)
+		}
+	}
+	if len(terminal) <= s.maxTerminal {
+		return
+	}
+	sort.Slice(terminal, func(i, j int) bool {
+		return terminal[i].EndedAt.Before(terminal[j].EndedAt)
+	})
+	for _, j := range terminal[:len(terminal)-s.maxTerminal] {
+		delete(s.jobs, j.ID)
+		delete(s.cancels, j.ID)
+	}
 }

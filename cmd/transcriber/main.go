@@ -25,6 +25,7 @@ func main() {
 	callbackWorkers := flag.Int("callback-workers", 2, "number of webhook delivery goroutines")
 	defaultModel := flag.String("default-model", "stub", "model adapter ID to use when the request omits `model`")
 	defaultPromptFile := flag.String("default-prompt-file", "prompt.txt", "path to a file whose contents are used as the prompt when the request omits one (missing file = no default prompt)")
+	maxTerminalJobs := flag.Int("max-terminal-jobs", 20, "how many finished jobs (completed/failed/canceled) to retain in memory; <= 0 disables the cap")
 	flag.Parse()
 
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo})))
@@ -50,7 +51,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	store := jobs.NewStore()
+	store := jobs.NewStore(*maxTerminalJobs)
 	queue := jobs.NewQueue()
 	notifier := callback.NewNotifier(*callbackWorkers, 256)
 

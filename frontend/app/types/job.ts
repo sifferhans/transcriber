@@ -1,5 +1,5 @@
 export type JobStatus =
-  | "PENDING"
+  | "QUEUED"
   | "RUNNING"
   | "COMPLETED"
   | "FAILED"

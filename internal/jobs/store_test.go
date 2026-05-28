@@ -9,7 +9,7 @@ import (
 )
 
 func TestStore_CreateAndGet(t *testing.T) {
-	s := NewStore()
+	s := NewStore(0)
 	in := Job{ID: "a", Path: "/x.wav", Status: StatusPending, Priority: 3}
 	s.Create(in)
 
@@ -23,7 +23,7 @@ func TestStore_CreateAndGet(t *testing.T) {
 }
 
 func TestStore_GetReturnsCopy(t *testing.T) {
-	s := NewStore()
+	s := NewStore(0)
 	s.Create(Job{ID: "a", Status: StatusPending, Progress: 0})
 
 	snap, _ := s.Get("a")
@@ -39,14 +39,14 @@ func TestStore_GetReturnsCopy(t *testing.T) {
 }
 
 func TestStore_GetMissing(t *testing.T) {
-	s := NewStore()
+	s := NewStore(0)
 	if _, ok := s.Get("nope"); ok {
 		t.Fatal("expected missing job to return ok=false")
 	}
 }
 
 func TestStore_UpdateApplies(t *testing.T) {
-	s := NewStore()
+	s := NewStore(0)
 	s.Create(Job{ID: "a", Status: StatusPending, Progress: 0})
 
 	ok := s.Update("a", func(j *Job) {
@@ -63,7 +63,7 @@ func TestStore_UpdateApplies(t *testing.T) {
 }
 
 func TestStore_UpdateMissing(t *testing.T) {
-	s := NewStore()
+	s := NewStore(0)
 	called := false
 	ok := s.Update("nope", func(j *Job) { called = true })
 	if ok {
@@ -75,7 +75,7 @@ func TestStore_UpdateMissing(t *testing.T) {
 }
 
 func TestStore_ListSortedByCreatedAt(t *testing.T) {
-	s := NewStore()
+	s := NewStore(0)
 	now := time.Now()
 	s.Create(Job{ID: "second", CreatedAt: now.Add(2 * time.Second)})
 	s.Create(Job{ID: "first", CreatedAt: now.Add(1 * time.Second)})
@@ -94,7 +94,7 @@ func TestStore_ListSortedByCreatedAt(t *testing.T) {
 }
 
 func TestStore_CancelInvokesFunc(t *testing.T) {
-	s := NewStore()
+	s := NewStore(0)
 	s.Create(Job{ID: "a", Status: StatusRunning})
 
 	_, cancel := context.WithCancel(context.Background())
@@ -114,14 +114,14 @@ func TestStore_CancelInvokesFunc(t *testing.T) {
 }
 
 func TestStore_CancelUnknown(t *testing.T) {
-	s := NewStore()
+	s := NewStore(0)
 	if s.Cancel("nope") {
 		t.Fatal("expected Cancel on missing id to return false")
 	}
 }
 
 func TestStore_CancelAfterClear(t *testing.T) {
-	s := NewStore()
+	s := NewStore(0)
 	s.Create(Job{ID: "a"})
 
 	var called atomic.Bool
@@ -138,7 +138,7 @@ func TestStore_CancelAfterClear(t *testing.T) {
 
 // TestStore_ConcurrentAccess is meant to be run with `go test -race`.
 func TestStore_ConcurrentAccess(t *testing.T) {
-	s := NewStore()
+	s := NewStore(0)
 	const N = 50
 
 	for i := range N {
@@ -174,6 +174,114 @@ func TestStore_ConcurrentAccess(t *testing.T) {
 		if got.Progress != 99 {
 			t.Fatalf("job %d: expected final progress 99, got %d", i, got.Progress)
 		}
+	}
+}
+
+func TestStore_EvictTerminalKeepsActive(t *testing.T) {
+	s := NewStore(2)
+	base := time.Now()
+
+	for i := range 5 {
+		id := idOf(i)
+		s.Create(Job{ID: id, Status: StatusPending, CreatedAt: base.Add(time.Duration(i) * time.Second)})
+		s.Update(id, func(j *Job) {
+			j.Status = StatusCompleted
+			j.EndedAt = base.Add(time.Duration(i) * time.Second)
+		})
+	}
+
+	s.Create(Job{ID: "running", Status: StatusRunning, CreatedAt: base.Add(10 * time.Second)})
+	s.Create(Job{ID: "queued", Status: StatusPending, CreatedAt: base.Add(11 * time.Second)})
+
+	got := s.List()
+	if len(got) != 4 {
+		t.Fatalf("expected 4 jobs (2 terminal + 2 active), got %d: %+v", len(got), got)
+	}
+
+	ids := map[string]bool{}
+	for _, j := range got {
+		ids[j.ID] = true
+	}
+	if !ids["running"] || !ids["queued"] {
+		t.Fatalf("active jobs were evicted: %+v", ids)
+	}
+	if !ids[idOf(3)] || !ids[idOf(4)] {
+		t.Fatalf("expected the two newest terminal jobs to survive, got %+v", ids)
+	}
+	if ids[idOf(0)] || ids[idOf(1)] || ids[idOf(2)] {
+		t.Fatalf("expected oldest terminal jobs to be evicted, got %+v", ids)
+	}
+}
+
+func TestStore_EvictMixedTerminalStatuses(t *testing.T) {
+	s := NewStore(2)
+	base := time.Now()
+	mk := func(id, status string, secondsOffset int) {
+		s.Create(Job{ID: id, Status: StatusPending, CreatedAt: base})
+		s.Update(id, func(j *Job) {
+			j.Status = status
+			j.EndedAt = base.Add(time.Duration(secondsOffset) * time.Second)
+		})
+	}
+	mk("oldfail", StatusFailed, 1)
+	mk("oldcancel", StatusCanceled, 2)
+	mk("recentdone", StatusCompleted, 3)
+	mk("newestfail", StatusFailed, 4)
+
+	got := s.List()
+	if len(got) != 2 {
+		t.Fatalf("expected 2 jobs after eviction, got %d", len(got))
+	}
+	survived := map[string]bool{}
+	for _, j := range got {
+		survived[j.ID] = true
+	}
+	if !survived["recentdone"] || !survived["newestfail"] {
+		t.Fatalf("wrong jobs survived: %+v", survived)
+	}
+}
+
+func TestStore_EvictClearsCancel(t *testing.T) {
+	s := NewStore(1)
+	base := time.Now()
+
+	s.Create(Job{ID: "old", Status: StatusRunning, CreatedAt: base})
+	s.SetCancel("old", func() {})
+	s.Update("old", func(j *Job) {
+		j.Status = StatusCompleted
+		j.EndedAt = base.Add(time.Second)
+	})
+
+	s.Create(Job{ID: "new", Status: StatusRunning, CreatedAt: base.Add(2 * time.Second)})
+	s.Update("new", func(j *Job) {
+		j.Status = StatusCompleted
+		j.EndedAt = base.Add(3 * time.Second)
+	})
+
+	if _, ok := s.Get("old"); ok {
+		t.Fatal("expected old job to be evicted")
+	}
+	s.mu.RLock()
+	_, hasCancel := s.cancels["old"]
+	s.mu.RUnlock()
+	if hasCancel {
+		t.Fatal("expected cancel entry to be cleared for evicted job")
+	}
+}
+
+func TestStore_NoEvictionWhenLimitDisabled(t *testing.T) {
+	s := NewStore(0)
+	base := time.Now()
+	for i := range 20 {
+		id := idOf(i)
+		s.Create(Job{ID: id, Status: StatusPending, CreatedAt: base})
+		s.Update(id, func(j *Job) {
+			j.Status = StatusCompleted
+			j.EndedAt = base.Add(time.Duration(i) * time.Second)
+		})
+	}
+	if got := len(s.List()); got != 20 {
+		t.Fatalf("expected no eviction with limit=0, got %d jobs", got)
 	}
 }
 

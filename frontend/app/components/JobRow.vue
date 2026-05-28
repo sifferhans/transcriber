@@ -8,7 +8,7 @@ const api = useApi();
 const canceling = ref(false);
 
 const canCancel = computed(
-    () => props.job.status === "PENDING" || props.job.status === "RUNNING",
+    () => props.job.status === "QUEUED" || props.job.status === "RUNNING",
 );
 
 async function onCancel(e: Event) {

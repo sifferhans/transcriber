@@ -23,15 +23,10 @@ const error = ref<string | null>(null);
 
 const LANGS = [
     { value: "auto", label: "auto-detect" },
-    { value: "en", label: "English" },
     { value: "no", label: "Norwegian" },
+    { value: "en", label: "English" },
     { value: "de", label: "German" },
-    { value: "es", label: "Spanish" },
-    { value: "fr", label: "French" },
-    { value: "it", label: "Italian" },
-    { value: "pt", label: "Portuguese" },
     { value: "nl", label: "Dutch" },
-    { value: "sv", label: "Swedish" },
 ];
 
 const FORMATS = [
