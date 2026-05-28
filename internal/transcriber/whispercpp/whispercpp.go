@@ -3,6 +3,7 @@ package whispercpp
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf16"
+	"unicode/utf8"
 
 	"transcriber/internal/transcriber"
 )
@@ -191,12 +194,110 @@ type rawSegment struct {
 }
 
 type rawToken struct {
-	Text    string `json:"text"`
+	Text    rawString `json:"text"`
 	Offsets struct {
 		From int `json:"from"`
 		To   int `json:"to"`
 	} `json:"offsets"`
 	ID int `json:"id"`
+}
+
+// rawString preserves the raw bytes of a JSON string. The standard
+// json.Unmarshal substitutes invalid UTF-8 with U+FFFD, which destroys
+// information; whisper.cpp BPE tokens routinely split a multi-byte
+// codepoint (e.g. "å" = 0xC3 0xA5) across two tokens, so each side has
+// an invalid byte on its own. Keeping the raw bytes lets the bytes
+// reconstitute when adjacent tokens are concatenated.
+type rawString string
+
+func (r *rawString) UnmarshalJSON(data []byte) error {
+	if len(data) < 2 || data[0] != '"' || data[len(data)-1] != '"' {
+		return fmt.Errorf("rawString: not a JSON string: %s", data)
+	}
+	*r = rawString(decodeJSONStringBody(data[1 : len(data)-1]))
+	return nil
+}
+
+func decodeJSONStringBody(body []byte) []byte {
+	if bytes.IndexByte(body, '\\') < 0 {
+		out := make([]byte, len(body))
+		copy(out, body)
+		return out
+	}
+	out := make([]byte, 0, len(body))
+	for i := 0; i < len(body); {
+		b := body[i]
+		if b != '\\' || i+1 >= len(body) {
+			out = append(out, b)
+			i++
+			continue
+		}
+		switch body[i+1] {
+		case '"', '\\', '/':
+			out = append(out, body[i+1])
+			i += 2
+		case 'b':
+			out = append(out, '\b')
+			i += 2
+		case 'f':
+			out = append(out, '\f')
+			i += 2
+		case 'n':
+			out = append(out, '\n')
+			i += 2
+		case 'r':
+			out = append(out, '\r')
+			i += 2
+		case 't':
+			out = append(out, '\t')
+			i += 2
+		case 'u':
+			if i+6 > len(body) {
+				out = append(out, b)
+				i++
+				continue
+			}
+			r1, ok := parseHex4(body[i+2 : i+6])
+			if !ok {
+				out = append(out, b)
+				i++
+				continue
+			}
+			i += 6
+			if utf16.IsSurrogate(r1) && i+6 <= len(body) && body[i] == '\\' && body[i+1] == 'u' {
+				if r2, ok := parseHex4(body[i+2 : i+6]); ok && utf16.IsSurrogate(r2) {
+					if r := utf16.DecodeRune(r1, r2); r != utf8.RuneError {
+						out = utf8.AppendRune(out, r)
+						i += 6
+						continue
+					}
+				}
+			}
+			out = utf8.AppendRune(out, r1)
+		default:
+			out = append(out, b)
+			i++
+		}
+	}
+	return out
+}
+
+func parseHex4(b []byte) (rune, bool) {
+	var r rune
+	for _, c := range b {
+		r <<= 4
+		switch {
+		case '0' <= c && c <= '9':
+			r |= rune(c - '0')
+		case 'a' <= c && c <= 'f':
+			r |= rune(c - 'a' + 10)
+		case 'A' <= c && c <= 'F':
+			r |= rune(c - 'A' + 10)
+		default:
+			return 0, false
+		}
+	}
+	return r, true
 }
 
 // Whisper vocab: id >= 50256 is a control token, not a word piece.
@@ -252,14 +353,15 @@ func tokensToWords(tokens []rawToken) []transcriber.Word {
 		if tok.ID >= firstSpecialTokenID {
 			continue
 		}
-		startsWord := cur == nil || strings.HasPrefix(tok.Text, " ")
+		text := string(tok.Text)
+		startsWord := cur == nil || strings.HasPrefix(text, " ")
 		if startsWord {
 			flush()
 			start := float64(tok.Offsets.From) / 1000.0
 			end := float64(tok.Offsets.To) / 1000.0
-			cur = &transcriber.Word{Text: tok.Text, Start: start, End: end}
+			cur = &transcriber.Word{Text: text, Start: start, End: end}
 		} else {
-			cur.Text += tok.Text
+			cur.Text += text
 			if end := float64(tok.Offsets.To) / 1000.0; end > cur.End {
 				cur.End = end
 			}

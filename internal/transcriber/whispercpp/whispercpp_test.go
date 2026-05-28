@@ -71,3 +71,39 @@ func TestTokensToWordsEmpty(t *testing.T) {
 		t.Errorf("tokensToWords(nil) = %v, want nil", got)
 	}
 }
+
+// Whisper.cpp BPE splits "å" into two byte-level tokens (0xC3 and 0xA5).
+// Each byte is invalid UTF-8 on its own; rawString must preserve the raw
+// bytes so concatenation reconstitutes the codepoint.
+func TestParseJSONReconstructsSplitUTF8Tokens(t *testing.T) {
+	raw := []byte("{" +
+		"\"result\":{\"language\":\"no\"}," +
+		"\"transcription\":[{" +
+		"\"offsets\":{\"from\":0,\"to\":1000}," +
+		"\"text\":\" Så\"," +
+		"\"tokens\":[" +
+		"{\"text\":\" S\",\"offsets\":{\"from\":0,\"to\":200},\"id\":1}," +
+		"{\"text\":\"\xC3\",\"offsets\":{\"from\":200,\"to\":400},\"id\":2}," +
+		"{\"text\":\"\xA5\",\"offsets\":{\"from\":400,\"to\":600},\"id\":3}" +
+		"]" +
+		"}]" +
+		"}")
+
+	tr, err := parseJSON(raw, "no")
+	if err != nil {
+		t.Fatalf("parseJSON: %v", err)
+	}
+	if len(tr.Segments) != 1 {
+		t.Fatalf("segments = %d, want 1", len(tr.Segments))
+	}
+	if got := tr.Segments[0].Text; got != "Så" {
+		t.Errorf("segment text = %q, want %q", got, "Så")
+	}
+	words := tr.Segments[0].Words
+	if len(words) != 1 {
+		t.Fatalf("words = %d (%+v), want 1", len(words), words)
+	}
+	if words[0].Text != "Så" {
+		t.Errorf("word text = %q (bytes %x), want %q", words[0].Text, []byte(words[0].Text), "Så")
+	}
+}
