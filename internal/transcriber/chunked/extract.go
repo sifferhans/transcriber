@@ -1,6 +1,7 @@
 package chunked
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os/exec"
@@ -21,10 +22,16 @@ func ProbeDuration(ctx context.Context, ffprobeBin, path string) (float64, error
 		"-of", "default=noprint_wrappers=1:nokey=1",
 		path,
 	)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	procutil.KillGroupOnCancel(cmd)
 	out, err := cmd.Output()
 	if err != nil {
-		return 0, fmt.Errorf("ffprobe: %w", err)
+		msg := strings.TrimSpace(stderr.String())
+		if msg == "" {
+			return 0, fmt.Errorf("ffprobe %q: %w", path, err)
+		}
+		return 0, fmt.Errorf("ffprobe %q: %w: %s", path, err, msg)
 	}
 	s := strings.TrimSpace(string(out))
 	d, err := strconv.ParseFloat(s, 64)
