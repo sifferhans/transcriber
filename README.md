@@ -52,6 +52,7 @@ Go code. Server settings come from flags; per-machine paths from env vars.
 | `-default-prompt-file` | `prompt.txt` | file whose contents are used as the prompt when the request omits one; missing file = no default. A non-empty `prompt` in the request fully overrides it                              |
 | `-job-timeout`         | `30m`        | wall-clock cap per job; on expiry the worker cancels the subprocess and marks the job `FAILED` with `error: "timeout"`. Per-request `timeout_seconds` overrides this. `<= 0` disables |
 | `-max-terminal-jobs`   | `20`         | how many finished jobs (completed/failed/canceled) to retain in memory; `<= 0` disables the cap                                                                                       |
+| `-log-format`          | `text`       | `text` for human-readable output (dev), `json` for structured logs (prod). The Dockerfile sets `json`                                                                                 |
 
 | Env var             | Default                         | Meaning                                                                                                                                             |
 | ------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |

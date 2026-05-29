@@ -27,9 +27,21 @@ func main() {
 	defaultPromptFile := flag.String("default-prompt-file", "prompt.txt", "path to a file whose contents are used as the prompt when the request omits one (missing file = no default prompt)")
 	maxTerminalJobs := flag.Int("max-terminal-jobs", 20, "how many finished jobs (completed/failed/canceled) to retain in memory; <= 0 disables the cap")
 	jobTimeout := flag.Duration("job-timeout", 30*time.Minute, "default wall-clock timeout per job; per-request timeout_seconds overrides this; <= 0 disables")
+	logFormat := flag.String("log-format", "text", "log handler: text (human-readable, dev) or json (structured, prod)")
 	flag.Parse()
 
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo})))
+	handlerOpts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	var handler slog.Handler
+	switch *logFormat {
+	case "json":
+		handler = slog.NewJSONHandler(os.Stderr, handlerOpts)
+	case "text":
+		handler = slog.NewTextHandler(os.Stderr, handlerOpts)
+	default:
+		fmt.Fprintf(os.Stderr, "invalid -log-format %q (want text or json)\n", *logFormat)
+		os.Exit(2)
+	}
+	slog.SetDefault(slog.New(handler))
 
 	var defaultPrompt string
 	if *defaultPromptFile != "" {

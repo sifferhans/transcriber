@@ -72,4 +72,4 @@ EXPOSE 8888
 
 # `prompt.txt` is optional; mount one in if you want a default prompt.
 ENTRYPOINT ["/usr/local/bin/transcriber"]
-CMD ["-port=8888", "-workers=2", "-default-model=whisper-cpp-large-v3"]
+CMD ["-port=8888", "-workers=2", "-default-model=whisper-cpp-large-v3", "-log-format=json"]
