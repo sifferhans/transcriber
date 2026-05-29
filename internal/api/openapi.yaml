@@ -1,0 +1,332 @@
+openapi: 3.1.0
+info:
+  title: Transcriber API
+  version: "1.0.0"
+  description: |
+    HTTP API for the transcription service. Submit an audio file by
+    server-local path, poll for status (or receive a webhook callback), then
+    read the written transcript files from `output_path`.
+
+servers:
+  - url: http://localhost:8888
+    description: Local development
+  - url: http://{host}:8888
+    description: Deployed instance
+    variables:
+      host:
+        default: transcriber
+
+paths:
+  /transcription/job:
+    post:
+      summary: Submit a transcription job
+      description: |
+        Enqueues a transcription job. The audio at `path` must be readable
+        from inside the container; the resulting transcript files are written
+        to `output_path` (also a container-visible path).
+
+        Pass an `Idempotency-Key` header to dedupe retries: a second request
+        with the same key returns the existing job (200 OK) instead of
+        creating a new one.
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema: { type: string }
+          description: |
+            Caller-supplied key for deduping retries. Subsequent requests
+            with the same key return the original job.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TranscribeInput" }
+      responses:
+        "202":
+          description: Job created and queued.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TranscribeJob" }
+        "200":
+          description: |
+            Idempotency-Key matched an existing job; the original job is
+            returned unchanged.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TranscribeJob" }
+        "400":
+          description: Validation error (missing `path`/`output_path`, unknown `model`, negative `timeout_seconds`, malformed JSON).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "500":
+          description: No default model is configured and the request omitted `model`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /transcription/job/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+        description: 24-char hex job ID returned by `POST /transcription/job`.
+    get:
+      summary: Get a job by ID
+      responses:
+        "200":
+          description: Current state of the job.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TranscribeJob" }
+        "404":
+          description: No job with that ID (or it was evicted from the in-memory store).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    delete:
+      summary: Cancel a job
+      description: |
+        Marks a running or pending job as `CANCELED`. Idempotent: cancelling
+        an already-terminal job returns the job unchanged.
+      responses:
+        "200":
+          description: Final job state after the cancel attempt.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TranscribeJob" }
+        "404":
+          description: No job with that ID.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /transcription/jobs:
+    get:
+      summary: List jobs
+      description: |
+        Returns all jobs the server currently knows about. Terminal jobs are
+        capped at `-max-terminal-jobs` (default 20, oldest evicted first);
+        active jobs are never evicted.
+      responses:
+        "200":
+          description: Job list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TranscribeJob" }
+
+  /models:
+    get:
+      summary: List configured models
+      responses:
+        "200":
+          description: Available transcription models.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Model" }
+
+  /config:
+    get:
+      summary: Server configuration
+      description: Returns the default prompt baked into the server (empty string if none configured).
+      responses:
+        "200":
+          description: Server configuration.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  default_prompt: { type: string }
+                required: [default_prompt]
+
+  /stats:
+    get:
+      summary: Job-count summary
+      description: |
+        Counts of jobs by lifecycle bucket. JSON keys are capitalized
+        (`Queued`, `Running`, `Processed`) — this is intentional, not a
+        typo. `Processed` sums `COMPLETED + FAILED + CANCELED`.
+      responses:
+        "200":
+          description: Counts.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Stats" }
+
+  /healthz:
+    get:
+      summary: Liveness probe
+      responses:
+        "200":
+          description: Server is up.
+          content:
+            text/plain:
+              schema: { type: string, example: ok }
+
+  /readyz:
+    get:
+      summary: Readiness probe
+      description: Returns 503 until at least one default model is registered.
+      responses:
+        "200":
+          description: Ready to accept work.
+          content:
+            text/plain:
+              schema: { type: string, example: ok }
+        "503":
+          description: No default model is available yet.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+components:
+  schemas:
+    TranscribeInput:
+      type: object
+      required: [path, output_path]
+      properties:
+        path:
+          type: string
+          description: Server-local path to the input audio/video file.
+          example: /mnt/storage/in/episode-42.mp3
+        output_path:
+          type: string
+          description: Server-local directory where transcript files are written.
+          example: /mnt/storage/out/episode-42/
+        language:
+          type: string
+          description: |
+            ISO 639-1 language hint (e.g. `en`, `no`). Empty/`auto` lets the
+            model detect.
+          example: en
+        format:
+          type: string
+          description: |
+            Which transcript files to write. `all` (the default) writes
+            every format. Pass a single format or a comma-separated list to
+            restrict.
+          enum: [all, json, srt, vtt, txt, words.srt]
+          example: all
+        model:
+          type: string
+          description: Model ID from `GET /models`. Empty uses the server default.
+          example: whisper-cpp-large-v3
+        prompt:
+          type: string
+          description: Initial prompt biasing the decoder. Empty uses the server-wide default prompt (if any).
+        priority:
+          type: integer
+          description: Queue priority; lower number = sooner. Defaults to 1000.
+          default: 1000
+        callback:
+          type: string
+          format: uri
+          description: |
+            Optional webhook URL. POSTed with a `TranscribeJob` JSON body on
+            status changes (including terminal `FAILED` and `CANCELED`).
+        subtitle_options:
+          $ref: "#/components/schemas/SubtitleOptions"
+        timeout_seconds:
+          type: integer
+          minimum: 0
+          description: Per-job timeout. `0` means no timeout.
+
+    TranscribeJob:
+      type: object
+      required:
+        [
+          id,
+          path,
+          language,
+          format,
+          output_path,
+          progress,
+          status,
+          result,
+          callback,
+          model,
+          duration,
+          priority,
+        ]
+      properties:
+        id:
+          type: string
+          description: 24-char hex job ID.
+        path: { type: string }
+        language: { type: string }
+        format:
+          type: string
+          description: The `format` value from the original request.
+        output_path: { type: string }
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        status:
+          type: string
+          enum: [QUEUED, RUNNING, COMPLETED, FAILED, CANCELED]
+        result:
+          type: string
+          description: Filesystem path to `transcript.json` on success (empty otherwise).
+        results:
+          type: array
+          items: { type: string }
+          description: Paths to every written transcript file (json/srt/vtt/txt/words.srt depending on `format`).
+        callback: { type: string }
+        model: { type: string }
+        prompt: { type: string }
+        subtitle_options:
+          $ref: "#/components/schemas/SubtitleOptions"
+        duration:
+          type: string
+          description: |
+            Wall-clock time spent transcribing, prefixed with `duration: `
+            (e.g. `"duration: 1m23.4s"`). Empty until the job is terminal.
+        priority: { type: integer }
+        error:
+          type: string
+          description: Present on `FAILED` jobs.
+        timeout_seconds:
+          type: integer
+          description: The configured timeout for this job (`0` = no timeout).
+
+    SubtitleOptions:
+      type: object
+      description: SRT/VTT cue-splitting tuning. Zero values use broadcast defaults (≤42 chars, ≤2 lines).
+      properties:
+        max_chars_per_line:
+          type: integer
+          minimum: 1
+        max_lines_per_cue:
+          type: integer
+          minimum: 1
+
+    Model:
+      type: object
+      required: [id, name, default]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        default: { type: boolean }
+
+    Stats:
+      type: object
+      required: [Queued, Running, Processed]
+      properties:
+        Queued: { type: integer }
+        Running: { type: integer }
+        Processed:
+          type: integer
+          description: Sum of `COMPLETED + FAILED + CANCELED`.
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }

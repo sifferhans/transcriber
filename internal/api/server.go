@@ -2,6 +2,7 @@ package api
 
 import (
 	"crypto/rand"
+	_ "embed"
 	"encoding/hex"
 	"encoding/json"
 	"net/http"
@@ -10,6 +11,15 @@ import (
 	"transcriber/internal/jobs"
 	"transcriber/internal/transcriber"
 )
+
+//go:embed openapi.yaml
+var openAPISpec []byte
+
+//go:embed docs.html
+var docsHTML []byte
+
+//go:embed logo.svg
+var logoSVG []byte
 
 type Server struct {
 	store         *jobs.Store
@@ -34,6 +44,9 @@ func (s *Server) Routes(staticHandler http.Handler) http.Handler {
 	mux.HandleFunc("GET /stats", s.stats)
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /readyz", s.ready)
+	mux.HandleFunc("GET /openapi.yaml", s.openapi)
+	mux.HandleFunc("GET /docs", s.docs)
+	mux.HandleFunc("GET /docs/logo.svg", s.docsLogo)
 	if staticHandler != nil {
 		mux.Handle("/", staticHandler)
 	}
@@ -188,6 +201,22 @@ func (s *Server) stats(w http.ResponseWriter, _ *http.Request) {
 func (s *Server) health(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("ok"))
+}
+
+func (s *Server) openapi(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/yaml")
+	_, _ = w.Write(openAPISpec)
+}
+
+func (s *Server) docs(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = w.Write(docsHTML)
+}
+
+func (s *Server) docsLogo(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "image/svg+xml")
+	w.Header().Set("Cache-Control", "public, max-age=86400")
+	_, _ = w.Write(logoSVG)
 }
 
 func (s *Server) ready(w http.ResponseWriter, _ *http.Request) {
