@@ -1,0 +1,22 @@
+services:
+  transcriber:
+    build: .
+    image: transcriber:latest
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    volumes:
+      # Whisper model cache — persists ggml model downloads across restarts.
+      - models:/var/cache/transcriber
+      # Audio in / transcripts out. Adjust the host paths to your storage.
+      - /mnt/storage:/mnt/storage
+      # Optional: mount a default prompt file (vocabulary hints, etc.).
+      # - ./prompt.txt:/app/prompt.txt:ro
+
+    # Override the default flags here if you want, e.g.:
+    # command: ["-port=8888", "-workers=4", "-default-model=nb-whisper-large"]
+
+# GPU access is opt-in via docker-compose.gpu.yml — see DEPLOY.md.
+
+volumes:
+  models:

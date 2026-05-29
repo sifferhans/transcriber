@@ -1,0 +1,35 @@
+.git
+.gitignore
+.idea
+.fleet
+.DS_Store
+
+# Build outputs — rebuilt inside the image
+frontend/node_modules
+frontend/.nuxt
+frontend/.nitro
+frontend/.output
+frontend/.cache
+frontend/dist
+internal/web/dist/*
+!internal/web/dist/.gitignore
+
+# Tests / local-only artifacts
+local_test
+*.log
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Deployment-specific prompt — mounted at runtime, not baked in
+prompt.txt
+
+# Pre-built binary
+transcriber
+
+# Docs / CI not needed in build context
+DEPLOY.md
+COMPATIBILITY.md
+IMPROVEMENTS.md
