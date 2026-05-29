@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -105,6 +106,10 @@ func (c *Cache) download(ctx context.Context, url, dest string) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		if msg := strings.TrimSpace(string(body)); msg != "" {
+			return fmt.Errorf("hfcache get %s: %s: %s", url, resp.Status, msg)
+		}
 		return fmt.Errorf("hfcache get %s: %s", url, resp.Status)
 	}
 	f, err := os.Create(dest)

@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -93,11 +96,17 @@ func (n *Notifier) deliver(ctx context.Context, t task) {
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := n.client.Do(req)
 		if err == nil {
-			resp.Body.Close()
 			if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+				resp.Body.Close()
 				return
 			}
-			err = errors.New(resp.Status)
+			body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+			resp.Body.Close()
+			if msg := strings.TrimSpace(string(body)); msg != "" {
+				err = fmt.Errorf("%s: %s", resp.Status, msg)
+			} else {
+				err = errors.New(resp.Status)
+			}
 		}
 		slog.Warn("callback delivery failed", "url", t.url, "attempt", attempt, "err", err)
 		if attempt == maxAttempts {
