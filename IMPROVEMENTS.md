@@ -135,9 +135,39 @@ choosing a default > 1.
 
 Each `whisper-cli` / `whisper-ctranslate2` invocation reloads the model
 from disk (~5s for large-v3). When chunking a 1-hour file into 12 chunks
-that's a meaningful tax. Long-running per-model worker processes (whisper.cpp
-ships a `server` binary; faster-whisper can wrap in a Python sidecar)
-amortize the load cost across all chunks of a job and across jobs.
+that's a meaningful tax. Long-running per-model worker processes amortize
+the load cost across all chunks of a job and across jobs.
+
+whisper.cpp ships a `server` binary built from the same source we already
+clone in the Dockerfile — adding `whisper-server` to the cmake `--target`
+list is a one-liner. The real work is the adapter: a new
+`internal/transcriber/whisperserver` that POSTs audio to the running
+server over HTTP, plus lifecycle management (start it from the Go
+process, health-check it, restart on crash).
+
+## Image / deployment
+
+Quality-of-life items for the Docker image and on-prem deployment flow.
+
+- **Pin whisper.cpp by commit SHA.** Currently `WHISPER_CPP_REF=v1.7.4`,
+  which is a mutable tag — git tags can be force-moved. Switch to a
+  40-char SHA so the image is bit-reproducible.
+
+- **Compose healthcheck.** Add `healthcheck:` to `docker-compose.yml`
+  hitting `/healthz`. Gives Docker's restart policy something to act on
+  if the API hangs without crashing, and `docker compose ps` will show
+  health status at a glance.
+
+- **Multi-arch image.** Every stage in the Dockerfile is pinned to
+  `linux/amd64` to match the on-prem target. Building also for
+  `linux/arm64` via `docker buildx` makes local dev on Apple Silicon
+  fast (no qemu) and futureproofs against arm64 servers.
+
+- **Build-push to an internal registry.** Today every host that runs
+  `docker compose build` rebuilds whisper.cpp from source. Build once
+  in CI, push to ghcr.io or an internal registry, `docker compose pull`
+  on-prem. Saves the C++ compile per host and gives you image-version
+  pinning for rollbacks.
 
 ## Result-display duration cap
 
