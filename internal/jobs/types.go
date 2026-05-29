@@ -25,6 +25,7 @@ type Job struct {
 	Model      string
 	Prompt     string
 	Subtitle   formats.SubtitleOptions
+	Timeout    time.Duration
 
 	Status   string
 	Progress int

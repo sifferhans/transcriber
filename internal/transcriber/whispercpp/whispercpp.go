@@ -18,6 +18,7 @@ import (
 	"unicode/utf16"
 	"unicode/utf8"
 
+	"transcriber/internal/procutil"
 	"transcriber/internal/transcriber"
 )
 
@@ -119,6 +120,7 @@ func (a *Adapter) Transcribe(ctx context.Context, req transcriber.Request, onPro
 
 	start := time.Now()
 	cmd := exec.CommandContext(ctx, a.cfg.Binary, args...)
+	procutil.KillGroupOnCancel(cmd)
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return nil, err

@@ -54,6 +54,10 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "missing output_path")
 		return
 	}
+	if in.TimeoutSeconds < 0 {
+		writeError(w, http.StatusBadRequest, "timeout_seconds must be >= 0")
+		return
+	}
 	if in.Priority <= 0 {
 		in.Priority = 1000
 	}
@@ -87,6 +91,7 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 		Callback:   in.Callback,
 		Model:      model,
 		Prompt:     prompt,
+		Timeout:    time.Duration(in.TimeoutSeconds) * time.Second,
 		Status:     jobs.StatusPending,
 		CreatedAt:  now,
 	}

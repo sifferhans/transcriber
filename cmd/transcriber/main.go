@@ -26,6 +26,7 @@ func main() {
 	defaultModel := flag.String("default-model", "stub", "model adapter ID to use when the request omits `model`")
 	defaultPromptFile := flag.String("default-prompt-file", "prompt.txt", "path to a file whose contents are used as the prompt when the request omits one (missing file = no default prompt)")
 	maxTerminalJobs := flag.Int("max-terminal-jobs", 20, "how many finished jobs (completed/failed/canceled) to retain in memory; <= 0 disables the cap")
+	jobTimeout := flag.Duration("job-timeout", 30*time.Minute, "default wall-clock timeout per job; per-request timeout_seconds overrides this; <= 0 disables")
 	flag.Parse()
 
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo})))
@@ -62,7 +63,7 @@ func main() {
 
 	pool := worker.New(*workers, store, queue, registry, notifier, func(j jobs.Job) any {
 		return api.ToDTO(j)
-	})
+	}, *jobTimeout)
 	pool.Start(ctx)
 
 	srv := api.NewServer(store, queue, registry, defaultPrompt)

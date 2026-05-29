@@ -94,17 +94,6 @@ language to English in one pass. For a multilingual content library this
 eliminates a second processing step. Add a `task` field (`transcribe` /
 `translate`) on the job request.
 
-## Job timeouts + orphan-process cleanup
-
-A hung `whisper-cli` today won't be killed unless someone cancels the
-job manually. Two changes:
-
-1. Wall-clock timeout per job (config + per-request override). On expiry,
-   cancel context and mark the job `FAILED` with reason `timeout`.
-2. Verify `exec.CommandContext` propagates SIGKILL to the whisper process
-   tree on context cancel — set `Setpgid: true` and kill the process group
-   on Unix to be safe.
-
 ## Prometheus metrics + structured JSON logging
 
 For operability without poking the API:

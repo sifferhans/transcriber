@@ -43,13 +43,15 @@ has no external dependencies.
 The set of registered models lives in `cmd/transcriber/models.go` as typed
 Go code. Server settings come from flags; per-machine paths from env vars.
 
-| Flag                   | Default      | Meaning                                                                                                                                                  |
-| ---------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-port`                | `8888`       | HTTP listen port                                                                                                                                         |
-| `-workers`             | `2`          | concurrent transcription jobs                                                                                                                            |
-| `-callback-workers`    | `2`          | webhook delivery goroutines                                                                                                                              |
-| `-default-model`       | `stub`       | adapter ID used when the request omits `model`                                                                                                           |
-| `-default-prompt-file` | `prompt.txt` | file whose contents are used as the prompt when the request omits one; missing file = no default. A non-empty `prompt` in the request fully overrides it |
+| Flag                   | Default      | Meaning                                                                                                                                                                               |
+| ---------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-port`                | `8888`       | HTTP listen port                                                                                                                                                                      |
+| `-workers`             | `2`          | concurrent transcription jobs                                                                                                                                                         |
+| `-callback-workers`    | `2`          | webhook delivery goroutines                                                                                                                                                           |
+| `-default-model`       | `stub`       | adapter ID used when the request omits `model`                                                                                                                                        |
+| `-default-prompt-file` | `prompt.txt` | file whose contents are used as the prompt when the request omits one; missing file = no default. A non-empty `prompt` in the request fully overrides it                              |
+| `-job-timeout`         | `30m`        | wall-clock cap per job; on expiry the worker cancels the subprocess and marks the job `FAILED` with `error: "timeout"`. Per-request `timeout_seconds` overrides this. `<= 0` disables |
+| `-max-terminal-jobs`   | `20`         | how many finished jobs (completed/failed/canceled) to retain in memory; `<= 0` disables the cap                                                                                       |
 
 | Env var             | Default                         | Meaning                                                                                                                                             |
 | ------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -71,12 +73,14 @@ Go code. Server settings come from flags; per-machine paths from env vars.
   "output_path": "/mnt/storage/out/foo/",
   "priority": 5,
   "callback": "https://example.com/hook",
-  "model": "whisper-cpp-large-v3"
+  "model": "whisper-cpp-large-v3",
+  "timeout_seconds": 1800
 }
 ```
 
 `model` is optional — omit to use the default. `format: "all"` writes
 json+srt+vtt+txt; or pass a comma-separated subset like `"json,srt"`.
+`timeout_seconds` is optional — omit to inherit the server's `-job-timeout`.
 
 ```sh
 # Submit a job, then poll until it completes.

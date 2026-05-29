@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"transcriber/internal/procutil"
 )
 
 // ProbeDuration returns the audio duration in seconds via ffprobe.
@@ -19,6 +21,7 @@ func ProbeDuration(ctx context.Context, ffprobeBin, path string) (float64, error
 		"-of", "default=noprint_wrappers=1:nokey=1",
 		path,
 	)
+	procutil.KillGroupOnCancel(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return 0, fmt.Errorf("ffprobe: %w", err)
@@ -47,6 +50,7 @@ func ExtractChunk(ctx context.Context, ffmpegBin, inputPath, outPath string, sta
 		"-c:a", "pcm_s16le",
 		outPath,
 	)
+	procutil.KillGroupOnCancel(cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("ffmpeg extract: %w: %s", err, strings.TrimSpace(string(out)))

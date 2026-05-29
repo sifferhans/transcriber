@@ -18,15 +18,18 @@ import (
 
 // Pool is a fixed-size worker pool that runs jobs through the configured adapter.
 type Pool struct {
-	workers  int
-	store    *jobs.Store
-	queue    *jobs.Queue
-	registry *transcriber.Registry
-	notifier *callback.Notifier
-	dtoFn    func(jobs.Job) any
-	wg       sync.WaitGroup
+	workers        int
+	store          *jobs.Store
+	queue          *jobs.Queue
+	registry       *transcriber.Registry
+	notifier       *callback.Notifier
+	dtoFn          func(jobs.Job) any
+	defaultTimeout time.Duration
+	wg             sync.WaitGroup
 }
 
+// New builds a pool. defaultTimeout <= 0 disables the wall-clock cap; the
+// per-job Timeout takes precedence when non-zero.
 func New(
 	workers int,
 	store *jobs.Store,
@@ -34,17 +37,19 @@ func New(
 	registry *transcriber.Registry,
 	notifier *callback.Notifier,
 	dtoFn func(jobs.Job) any,
+	defaultTimeout time.Duration,
 ) *Pool {
 	if workers < 1 {
 		workers = 1
 	}
 	return &Pool{
-		workers:  workers,
-		store:    store,
-		queue:    queue,
-		registry: registry,
-		notifier: notifier,
-		dtoFn:    dtoFn,
+		workers:        workers,
+		store:          store,
+		queue:          queue,
+		registry:       registry,
+		notifier:       notifier,
+		dtoFn:          dtoFn,
+		defaultTimeout: defaultTimeout,
 	}
 }
 
@@ -87,7 +92,17 @@ func (p *Pool) runJob(parent context.Context, id string, log *slog.Logger) {
 		return
 	}
 
-	ctx, cancel := context.WithCancel(parent)
+	timeout := job.Timeout
+	if timeout <= 0 {
+		timeout = p.defaultTimeout
+	}
+	var ctx context.Context
+	var cancel context.CancelFunc
+	if timeout > 0 {
+		ctx, cancel = context.WithTimeout(parent, timeout)
+	} else {
+		ctx, cancel = context.WithCancel(parent)
+	}
 	defer cancel()
 	p.store.SetCancel(id, cancel)
 	defer p.store.ClearCancel(id)
@@ -115,10 +130,14 @@ func (p *Pool) runJob(parent context.Context, id string, log *slog.Logger) {
 
 	res, err := adapter.Transcribe(ctx, req, onProgress)
 	if err != nil {
-		if errors.Is(err, context.Canceled) || ctx.Err() == context.Canceled {
+		switch {
+		case errors.Is(ctx.Err(), context.DeadlineExceeded):
+			p.markFailed(id, errors.New("timeout"))
+			log.Warn("job timed out", "id", id, "timeout", timeout)
+		case errors.Is(err, context.Canceled) || errors.Is(ctx.Err(), context.Canceled):
 			p.markCanceled(id)
 			log.Info("job canceled", "id", id)
-		} else {
+		default:
 			p.markFailed(id, err)
 			log.Error("job failed", "id", id, "err", err)
 		}

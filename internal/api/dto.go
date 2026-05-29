@@ -17,6 +17,7 @@ type TranscribeInput struct {
 	Model           string                   `json:"model,omitempty"`
 	Prompt          string                   `json:"prompt,omitempty"`
 	SubtitleOptions *formats.SubtitleOptions `json:"subtitle_options,omitempty"`
+	TimeoutSeconds  int                      `json:"timeout_seconds,omitempty"`
 }
 
 type TranscribeJob struct {
@@ -36,6 +37,7 @@ type TranscribeJob struct {
 	Duration        string                   `json:"duration"`
 	Priority        int                      `json:"priority"`
 	Error           string                   `json:"error,omitempty"`
+	TimeoutSeconds  int                      `json:"timeout_seconds,omitempty"`
 }
 
 func ToDTO(j jobs.Job) TranscribeJob {
@@ -61,6 +63,7 @@ func ToDTO(j jobs.Job) TranscribeJob {
 		Duration:        formatDuration(j.Duration),
 		Priority:        j.Priority,
 		Error:           j.Error,
+		TimeoutSeconds:  int(j.Timeout / time.Second),
 	}
 }
 
