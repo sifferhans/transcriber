@@ -16,14 +16,6 @@ existing `Store` interface fits a SQL backing with `jobs` + `job_events`
 tables. Restore in-flight jobs on boot (mark `RUNNING`-but-unowned ones as
 `PENDING` and requeue). Half-day swap.
 
-## Idempotency keys
-
-The caller retries on infra hiccups, and without deduplication the API
-will happily transcribe the same file twice. Accept `Idempotency-Key`
-(header or body field) on POST; cache the resulting job id for a fixed
-window (24h is conventional). Repeats inside the window return the
-original job's id with the original status.
-
 ## Network access control
 
 Currently anything reachable on the port can submit jobs. With a single

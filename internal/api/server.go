@@ -82,26 +82,30 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now()
 	job := jobs.Job{
-		ID:         newID(),
-		Path:       in.Path,
-		Language:   transcriber.NormalizeLanguage(in.Language),
-		Format:     in.Format,
-		OutputPath: in.OutputPath,
-		Priority:   in.Priority,
-		Callback:   in.Callback,
-		Model:      model,
-		Prompt:     prompt,
-		Timeout:    time.Duration(in.TimeoutSeconds) * time.Second,
-		Status:     jobs.StatusPending,
-		CreatedAt:  now,
+		ID:             newID(),
+		Path:           in.Path,
+		Language:       transcriber.NormalizeLanguage(in.Language),
+		Format:         in.Format,
+		OutputPath:     in.OutputPath,
+		Priority:       in.Priority,
+		Callback:       in.Callback,
+		Model:          model,
+		Prompt:         prompt,
+		Timeout:        time.Duration(in.TimeoutSeconds) * time.Second,
+		IdempotencyKey: r.Header.Get("Idempotency-Key"),
+		Status:         jobs.StatusPending,
+		CreatedAt:      now,
 	}
 	if in.SubtitleOptions != nil {
 		job.Subtitle = *in.SubtitleOptions
 	}
-	s.store.Create(job)
-	s.queue.Push(job.ID, job.Priority, job.CreatedAt)
-
-	writeJSON(w, http.StatusAccepted, ToDTO(job))
+	stored, created := s.store.CreateOrGet(job)
+	if !created {
+		writeJSON(w, http.StatusOK, ToDTO(stored))
+		return
+	}
+	s.queue.Push(stored.ID, stored.Priority, stored.CreatedAt)
+	writeJSON(w, http.StatusAccepted, ToDTO(stored))
 }
 
 func (s *Server) getJob(w http.ResponseWriter, r *http.Request) {

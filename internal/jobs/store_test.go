@@ -285,6 +285,66 @@ func TestStore_NoEvictionWhenLimitDisabled(t *testing.T) {
 	}
 }
 
+func TestStore_CreateOrGet_NoKeyAlwaysInserts(t *testing.T) {
+	s := NewStore(0)
+	first, created := s.CreateOrGet(Job{ID: "a", Status: StatusPending})
+	if !created || first.ID != "a" {
+		t.Fatalf("first insert: created=%v id=%q", created, first.ID)
+	}
+	second, created := s.CreateOrGet(Job{ID: "b", Status: StatusPending})
+	if !created || second.ID != "b" {
+		t.Fatalf("second insert: created=%v id=%q", created, second.ID)
+	}
+}
+
+func TestStore_CreateOrGet_SameKeyReturnsExisting(t *testing.T) {
+	s := NewStore(0)
+	first, created := s.CreateOrGet(Job{ID: "a", IdempotencyKey: "k1", Status: StatusPending})
+	if !created {
+		t.Fatal("first call should create")
+	}
+
+	second, created := s.CreateOrGet(Job{ID: "b", IdempotencyKey: "k1", Status: StatusPending})
+	if created {
+		t.Fatal("second call should be a hit, not a create")
+	}
+	if second.ID != first.ID {
+		t.Fatalf("returned id: got %q, want %q", second.ID, first.ID)
+	}
+	if got := len(s.List()); got != 1 {
+		t.Fatalf("store should still hold 1 job, got %d", got)
+	}
+}
+
+func TestStore_CreateOrGet_AfterEvictionTreatsKeyAsFresh(t *testing.T) {
+	s := NewStore(1)
+	base := time.Now()
+
+	_, _ = s.CreateOrGet(Job{ID: "old", IdempotencyKey: "k1", Status: StatusPending, CreatedAt: base})
+	s.Update("old", func(j *Job) {
+		j.Status = StatusCompleted
+		j.EndedAt = base.Add(time.Second)
+	})
+	// Evict "old" by inserting another terminal job past the cap.
+	_, _ = s.CreateOrGet(Job{ID: "new", Status: StatusPending, CreatedAt: base.Add(2 * time.Second)})
+	s.Update("new", func(j *Job) {
+		j.Status = StatusCompleted
+		j.EndedAt = base.Add(3 * time.Second)
+	})
+	if _, ok := s.Get("old"); ok {
+		t.Fatal("setup: expected 'old' to be evicted")
+	}
+
+	// Same key, new job ID — should insert since the previous mapping is gone.
+	got, created := s.CreateOrGet(Job{ID: "fresh", IdempotencyKey: "k1", Status: StatusPending, CreatedAt: base.Add(4 * time.Second)})
+	if !created {
+		t.Fatal("expected re-use of key after eviction to create a new job")
+	}
+	if got.ID != "fresh" {
+		t.Fatalf("id: got %q, want %q", got.ID, "fresh")
+	}
+}
+
 func idOf(i int) string {
 	return "id-" + itoa(i)
 }

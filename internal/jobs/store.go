@@ -15,6 +15,7 @@ type Store struct {
 	mu          sync.RWMutex
 	jobs        map[string]*Job
 	cancels     map[string]context.CancelFunc
+	byKey       map[string]string // IdempotencyKey -> job ID; only populated when the job has a key
 	maxTerminal int
 }
 
@@ -23,6 +24,7 @@ func NewStore(maxTerminal int) *Store {
 	return &Store{
 		jobs:        map[string]*Job{},
 		cancels:     map[string]context.CancelFunc{},
+		byKey:       map[string]string{},
 		maxTerminal: maxTerminal,
 	}
 }
@@ -30,9 +32,34 @@ func NewStore(maxTerminal int) *Store {
 func (s *Store) Create(j Job) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.createLocked(j)
+}
+
+// CreateOrGet atomically stores j or returns the existing job for j.IdempotencyKey.
+// The bool reports whether j was newly inserted. An empty IdempotencyKey skips the
+// index lookup and always inserts.
+func (s *Store) CreateOrGet(j Job) (Job, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if j.IdempotencyKey != "" {
+		if id, ok := s.byKey[j.IdempotencyKey]; ok {
+			if existing, ok := s.jobs[id]; ok {
+				return *existing, false
+			}
+		}
+	}
+	stored := s.createLocked(j)
+	return stored, true
+}
+
+func (s *Store) createLocked(j Job) Job {
 	cp := j
 	s.jobs[j.ID] = &cp
+	if j.IdempotencyKey != "" {
+		s.byKey[j.IdempotencyKey] = j.ID
+	}
 	s.evictTerminalLocked()
+	return cp
 }
 
 func (s *Store) Get(id string) (Job, bool) {
@@ -117,5 +144,8 @@ func (s *Store) evictTerminalLocked() {
 	for _, j := range terminal[:len(terminal)-s.maxTerminal] {
 		delete(s.jobs, j.ID)
 		delete(s.cancels, j.ID)
+		if j.IdempotencyKey != "" {
+			delete(s.byKey, j.IdempotencyKey)
+		}
 	}
 }

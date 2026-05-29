@@ -15,17 +15,18 @@ const (
 )
 
 type Job struct {
-	ID         string
-	Path       string
-	Language   string
-	Format     string
-	OutputPath string
-	Priority   int
-	Callback   string
-	Model      string
-	Prompt     string
-	Subtitle   formats.SubtitleOptions
-	Timeout    time.Duration
+	ID             string
+	Path           string
+	Language       string
+	Format         string
+	OutputPath     string
+	Priority       int
+	Callback       string
+	Model          string
+	Prompt         string
+	Subtitle       formats.SubtitleOptions
+	Timeout        time.Duration
+	IdempotencyKey string
 
 	Status   string
 	Progress int

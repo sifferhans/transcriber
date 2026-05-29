@@ -82,6 +82,12 @@ Go code. Server settings come from flags; per-machine paths from env vars.
 json+srt+vtt+txt; or pass a comma-separated subset like `"json,srt"`.
 `timeout_seconds` is optional — omit to inherit the server's `-job-timeout`.
 
+Send an `Idempotency-Key` header to dedupe retries: a repeated POST with the
+same key returns the original job (`200 OK`) instead of creating a new one
+(`202 Accepted`). The mapping lives as long as the job is in the store, so
+once a job has been evicted (see `-max-terminal-jobs`) the same key starts
+fresh.
+
 ```sh
 # Submit a job, then poll until it completes.
 JOB=$(curl -sS -X POST http://localhost:8888/transcription/job \
